@@ -1,0 +1,9 @@
+(rule
+  (targets lex.ml)
+  (deps (:x lex.mll))
+  (action (run ocamllex -q %{x})))
+
+(library
+  (name lexer)
+  (libraries base)
+  (preprocess (pps ppx_deriving.std)))
