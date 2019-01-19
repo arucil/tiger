@@ -1,0 +1,4 @@
+;; disable warning-as-error
+(env
+  (dev
+    (flags (:standard -warn-error -A))))
