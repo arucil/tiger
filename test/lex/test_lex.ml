@@ -2,6 +2,7 @@
 open Base
 open OUnit2
 open Lex
+open Token
 
 let run_lexer s =
   let lexbuf = Lexing.from_string s in
@@ -12,7 +13,7 @@ let run_lexer s =
   in
     go ()
 
-let assert_ok (src : string) (expected : Token.t list) =
+let assert_ok (src : string) (expected : token list) =
   let actual = run_lexer src in
   if Poly.(actual = expected) then
     ()
@@ -26,8 +27,8 @@ let assert_ok (src : string) (expected : Token.t list) =
 
 %s
 |}
-         ([%derive.show: Token.t list] expected)
-         ([%derive.show: Token.t list] actual))
+         ([%derive.show: token list] expected)
+         ([%derive.show: token list] actual))
 
 let test_lex =
   "Test Lexer" >::: [

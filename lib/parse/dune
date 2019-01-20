@@ -1,0 +1,8 @@
+(menhir
+  (flags --external-tokens Lex.Token --explain)
+  (modules parser))
+
+(library
+  (name parser)
+  (libraries base lex)
+  (preprocess (pps ppx_deriving.std)))

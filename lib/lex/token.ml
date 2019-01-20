@@ -5,7 +5,7 @@ type line_num = int [@@deriving show]
 
 type token_pos = line_num * col_num [@@deriving show]
 
-type t =
+type token =
   | WHILE of token_pos
   | FOR of token_pos
   | TO of token_pos
@@ -46,9 +46,9 @@ type t =
   | AND of token_pos
   | OR of token_pos
   | ASSIGN of token_pos
-  | ID of token_pos * string
-  | STR of token_pos * string
-  | INT of token_pos * int
+  | ID of (token_pos * string)
+  | STR of (token_pos * string)
+  | INT of (token_pos * int)
   | EOF of token_pos
   [@@deriving show]
 
