@@ -89,11 +89,11 @@ and read_string start_pos buf =
   | '\n'
     {
       next_line lexbuf;
-      raise (Error (get_pos lexbuf, "unterminated string"))
+      raise (Error (get_pos lexbuf, "unclosed string"))
     }
   | eof
     {
-      raise (Error (get_pos lexbuf, "unterminated string"))
+      raise (Error (get_pos lexbuf, "unclosed string"))
     }
 
 and read_escape start_pos buf =
@@ -119,7 +119,7 @@ and read_escape start_pos buf =
   | _
     { raise (Error (get_pos lexbuf, "invalid escape")) }
   | eof
-    { raise (Error (get_pos lexbuf, "unterminated string")) }
+    { raise (Error (get_pos lexbuf, "unclosed string")) }
 
 and read_linespan_escape start_pos buf =
   parse
@@ -130,7 +130,7 @@ and read_linespan_escape start_pos buf =
   | ['\x00'-' ']
     { read_linespan_escape start_pos buf lexbuf }
   | _ { raise (Error (get_pos lexbuf, "invalid escape")) }
-  | eof { raise (Error (get_pos lexbuf, "unterminated string")) }
+  | eof { raise (Error (get_pos lexbuf, "unclosed string")) }
 
 and read_comment level =
   parse
@@ -150,5 +150,5 @@ and read_comment level =
   | _
     { read_comment level lexbuf }
   | eof
-    { raise (Error (get_pos lexbuf, "unterminated comment")) }
+    { raise (Error (get_pos lexbuf, "unclosed comment")) }
 

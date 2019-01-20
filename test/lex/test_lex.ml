@@ -1,12 +1,12 @@
 
 open Base
 open OUnit2
-open Lexer
+open Lex
 
 let run_lexer s =
   let lexbuf = Lexing.from_string s in
   let rec go () =
-    match Lex.get_token lexbuf with
+    match Lexer.get_token lexbuf with
     | Token.EOF _ as t -> [t]
     | t -> t :: go ()
   in

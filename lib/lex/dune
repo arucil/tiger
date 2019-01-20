@@ -1,9 +1,9 @@
 (rule
-  (targets lex.ml)
-  (deps (:x lex.mll))
+  (targets lexer.ml)
+  (deps (:x lexer.mll))
   (action (run ocamllex -q %{x})))
 
 (library
-  (name lexer)
+  (name lex)
   (libraries base)
   (preprocess (pps ppx_deriving.std)))
