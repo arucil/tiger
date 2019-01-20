@@ -20,14 +20,13 @@
 
 let digit = ['0'-'9']
 let alpha = ['a'-'z' 'A'-'Z' '_']
-let whitespace = [' ' '\t']+
-let newline = '\r' | '\n' | "\r\n"
+let whitespace = [' ' '\t' '\r']+
 
 
 rule get_token =
   parse
   | whitespace { get_token lexbuf }
-  | newline { next_line lexbuf; get_token lexbuf }
+  | '\n' { next_line lexbuf; get_token lexbuf }
   | "while" { WHILE (get_pos lexbuf)}
   | "for" { FOR (get_pos lexbuf) }
   | "to" { TO (get_pos lexbuf) }
@@ -87,7 +86,7 @@ and read_string start_pos buf =
   | '"' { STR (start_pos, Buffer.contents buf) }
   | '\\' { read_escape start_pos buf lexbuf }
   | _ as c { Buffer.add_char buf c; read_string start_pos buf lexbuf }
-  | newline
+  | '\n'
     {
       next_line lexbuf;
       raise (Error (get_pos lexbuf, "unterminated string"))
@@ -113,7 +112,7 @@ and read_escape start_pos buf =
       else
         raise (Error (get_pos lexbuf, "ASCII code out of range"))
     }
-  | newline
+  | '\n'
     { next_line lexbuf; read_linespan_escape start_pos buf lexbuf }
   | ['\x00'-' ']
     { read_linespan_escape start_pos buf lexbuf }
@@ -126,7 +125,7 @@ and read_linespan_escape start_pos buf =
   parse
   | '\\'
     { read_string start_pos buf lexbuf }
-  | newline
+  | '\n'
     { next_line lexbuf; read_linespan_escape start_pos buf lexbuf }
   | ['\x00'-' ']
     { read_linespan_escape start_pos buf lexbuf }
@@ -146,7 +145,7 @@ and read_comment level =
     {
       read_comment (level + 1) lexbuf
     }
-  | newline
+  | '\n'
     { next_line lexbuf; read_comment level lexbuf }
   | _
     { read_comment level lexbuf }

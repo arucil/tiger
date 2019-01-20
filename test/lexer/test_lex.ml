@@ -153,12 +153,16 @@ a_B_c_1_2_3_.L1+If
 "abc\      \xyz"
   "abc\
   \def\
-  \ghi"
+  \ghi"  "123\
+
+
+            \456"
 |}
           [
             STR ((2, 1), "abcxyz");
             STR ((3, 3), "abcdefghi");
-            EOF (6, 1)
+            STR ((5, 10), "123456");
+            EOF (9, 1)
           ]
         );
     ];
