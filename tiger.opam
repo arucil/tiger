@@ -9,5 +9,6 @@ depends: [
   "base"
   "menhir"
   "ounit"
+  "ppx_deriving"
 ]
 dev-repo: "git+https://github.com/arucil/tiger"
