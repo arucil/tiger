@@ -166,6 +166,37 @@ a_B_c_1_2_3_.L1+If
           ]
         );
     ];
+
+    "mixed" >:: (fun _ ->
+      assert_ok {|
+let
+  var foo : int := 30
+  function fib(x : int) : int =
+    if x < 2 then x else fib(x - 1) + fib(x - 2)
+in
+  fib(foo)
+end
+|}
+        [
+          (Token.LET (2, 1)); (Token.VAR (3, 3)); (Token.ID ((3, 7), "foo"));
+          (Token.COLON (3, 11)); (Token.ID ((3, 13), "int")); (Token.ASSIGN (3, 17));
+          (Token.INT ((3, 20), 30)); (Token.FUNCTION (4, 3));
+          (Token.ID ((4, 12), "fib")); (Token.LPAREN (4, 15));
+          (Token.ID ((4, 16), "x")); (Token.COLON (4, 18));
+          (Token.ID ((4, 20), "int")); (Token.RPAREN (4, 23)); (Token.COLON (4, 25));
+          (Token.ID ((4, 27), "int")); (Token.EQ (4, 31)); (Token.IF (5, 5));
+          (Token.ID ((5, 8), "x")); (Token.LT (5, 10)); (Token.INT ((5, 12), 2));
+          (Token.THEN (5, 14)); (Token.ID ((5, 19), "x")); (Token.ELSE (5, 21));
+          (Token.ID ((5, 26), "fib")); (Token.LPAREN (5, 29));
+          (Token.ID ((5, 30), "x")); (Token.MINUS (5, 32)); (Token.INT ((5, 34), 1));
+          (Token.RPAREN (5, 35)); (Token.PLUS (5, 37)); (Token.ID ((5, 39), "fib"));
+          (Token.LPAREN (5, 42)); (Token.ID ((5, 43), "x")); (Token.MINUS (5, 45));
+          (Token.INT ((5, 47), 2)); (Token.RPAREN (5, 48)); (Token.IN (6, 1));
+          (Token.ID ((7, 3), "fib")); (Token.LPAREN (7, 6));
+          (Token.ID ((7, 7), "foo")); (Token.RPAREN (7, 10)); (Token.END (8, 1));
+          (Token.EOF (9, 1))
+        ]
+    );
   ]
 
 let () =
