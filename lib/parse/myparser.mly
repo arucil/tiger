@@ -7,7 +7,8 @@ open Lex.Token
 %token <token_pos> WHILE FOR TO BREAK LET IN END FUNCTION VAR TYPE ARRAY IF THEN
 %token <token_pos> ELSE DO OF NIL
 %token <token_pos> COMMA COLON SEMI LPAREN RPAREN LBRACK RBRACK LBRACE RBRACE
-%token <token_pos> DOT PLUS MINUS MULT DIV EQ NEQ GT GE LT LE AND OR ASSIGN EOF
+%token <token_pos> PLUS MINUS MULT DIV EQ NEQ GT GE LT LE AND OR DOT ASSIGN
+%token <token_pos> EOF
 %token <token_pos * string> ID STR
 %token <token_pos * int> INT
 
@@ -23,7 +24,9 @@ open Lex.Token
 %nonassoc IFX
 %nonassoc ELSE
 
-%start <unit> prog expr
+%type <unit> prog expr
+
+%start prog
 
 %%
 
@@ -45,36 +48,31 @@ expr:
   | expr; MULT; expr {}
   | expr; DIV; expr {}
   | MINUS; expr %prec UMINUS {}
-  | lvalue; DOT; ID {}
-  | array_expr {}
-  | ID; LBRACE; separated_list(COMMA, separated_pair(ID, EQ, expr)); RBRACE {}
-  | lvalue; ASSIGN; expr {}
-  | IF; expr; THEN; expr; %prec IFX {}
-  | IF; expr; THEN; expr; ELSE; expr {}
-  | WHILE; expr; DO; expr {}
-  | FOR; ID; ASSIGN; expr; TO; expr; DO; expr {}
-  | BREAK {}
   | STR {}
   | INT {}
   | NIL {}
   | LPAREN; separated_nonempty_list(SEMI, expr); RPAREN {}
   | LPAREN; RPAREN {}
-  | ID; LPAREN; separated_list(COMMA, expr); RPAREN {}
   | LET; list(decl); IN; separated_list(SEMI, expr); END {}
+  | IF; expr; THEN; expr; %prec IFX {}
+  | IF; expr; THEN; expr; ELSE; expr {}
+  | WHILE; expr; DO; expr {}
+  | FOR; ID; ASSIGN; expr; TO; expr; DO; expr {}
+  | BREAK {}
+  | ID; LBRACE; separated_list(COMMA, separated_pair(ID, EQ, expr)); RBRACE {}
+  | ID; LPAREN; separated_list(COMMA, expr); RPAREN {}
+  | lvalue; ASSIGN; expr {}
+  | lvalue {}
+  | ID; LBRACK; expr; RBRACK; OF; expr {}
   ;
 
 lvalue:
-  | ID {}
-  | lvalue; DOT; ID {}
-  | lvalue; LBRACK; expr; RBRACK {}
+  | ID; list(lvalue_suffix) {}
   ;
 
-array_expr:
-  | ID; LBRACK; expr; RBRACK; option(array_length) {}
-  ;
-
-array_length:
-  | OF; expr {}
+lvalue_suffix:
+  | DOT; ID {}
+  | LBRACK; expr; RBRACK {}
   ;
 
 decl:
@@ -105,3 +103,4 @@ ty:
 
 fields:
   | separated_list(COMMA, separated_pair(ID, COLON, ID)) {}
+  ;

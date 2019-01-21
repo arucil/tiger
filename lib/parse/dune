@@ -1,8 +1,9 @@
 (menhir
   (flags --external-tokens Lex.Token --explain)
-  (modules parser))
+  (modules myparser))
 
 (library
-  (name parser)
+  ; Rename this module to myparser to avoid name conflict with the standard library.
+  (name myparser)
   (libraries base lex)
   (preprocess (pps ppx_deriving.std)))
