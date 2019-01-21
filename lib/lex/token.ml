@@ -35,7 +35,7 @@ type token =
   | DOT of token_pos
   | PLUS of token_pos
   | MINUS of token_pos
-  | MULT of token_pos
+  | TIMES of token_pos
   | DIV of token_pos
   | EQ of token_pos
   | NEQ of token_pos

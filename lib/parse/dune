@@ -5,5 +5,5 @@
 (library
   ; Rename this module to myparser to avoid name conflict with the standard library.
   (name myparser)
-  (libraries base lex)
+  (libraries base stdio lex)
   (preprocess (pps ppx_deriving.std)))

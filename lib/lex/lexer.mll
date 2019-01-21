@@ -60,7 +60,7 @@ rule get_token =
   | '.' { DOT (get_pos lexbuf) }
   | '+' { PLUS (get_pos lexbuf) }
   | '-' { MINUS (get_pos lexbuf) }
-  | '*' { MULT (get_pos lexbuf) }
+  | '*' { TIMES (get_pos lexbuf) }
   | '/' { DIV (get_pos lexbuf) }
   | '=' { EQ (get_pos lexbuf) }
   | "<>" { NEQ (get_pos lexbuf) }

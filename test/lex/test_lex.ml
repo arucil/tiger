@@ -59,7 +59,7 @@ let test_lex =
   +-*/=:=,:;()[]{}>>=<<><=|&
 |}
       [
-        PLUS (2, 3); MINUS (2, 4); MULT (2, 5); DIV (2, 6);
+        PLUS (2, 3); MINUS (2, 4); TIMES (2, 5); DIV (2, 6);
         EQ (2, 7); ASSIGN (2, 8); COMMA (2, 10); COLON (2, 11);
         SEMI (2, 12); LPAREN (2, 13); RPAREN (2, 14); LBRACK (2, 15);
         RBRACK (2, 16); LBRACE (2, 17); RBRACE (2, 18); GT (2, 19);
