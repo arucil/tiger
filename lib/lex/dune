@@ -1,7 +1,6 @@
-(rule
-  (targets lexer.ml)
-  (deps (:x lexer.mll))
-  (action (run ocamllex -q %{x})))
+
+(ocamllex
+  (modules lexer))
 
 (library
   (name lex)
