@@ -7,11 +7,17 @@ type ('a, 'b) either =
   | Left of 'a
   | Right of 'b
 
-(* Workaround for Printf.fprintf not included in `base' *)
+(* Workaround for deprecated APIs in `base' *)
+
 module Printf = struct
   include Printf
   let fprintf = Stdio.Out_channel.fprintf
 end
+
+module Obj = Caml.Obj
+
+let stderr = Stdio.stderr
+
 
 let rec merge_decl_group : Ast.decl list -> Ast.decl list = function
   | decl1 :: decl2 :: decls ->
@@ -32,6 +38,8 @@ let rec merge_decl_group : Ast.decl list -> Ast.decl list = function
 %token <token_pos * int> INT
 
 %nonassoc DO
+%nonassoc IFX
+%nonassoc ELSE
 %nonassoc ASSIGN
 %left OR
 %left AND
@@ -40,8 +48,6 @@ let rec merge_decl_group : Ast.decl list -> Ast.decl list = function
 %left TIMES DIV
 %nonassoc UMINUS
 %nonassoc OF
-%nonassoc IFX
-%nonassoc ELSE
 
 %type <Ast.expr> prog expr
 %type <Ast.var> lvalue
@@ -79,16 +85,20 @@ expr:
   | pos = LPAREN; exprs = separated_list(SEMI, expr); RPAREN
     {
       match exprs with
+      | [] -> (pos, NilExpr)
       | [expr] -> expr
       | _ -> (pos, SeqExpr exprs)
     }
-  | pos = LET; decls = decl*; body_pos = IN; exprs = separated_list(SEMI, expr); END
+  | pos = LET; decls = decl*; in_pos = IN; exprs = separated_list(SEMI, expr); END
     {
+      let (in_line, in_col) = in_pos in
+      let body_pos = (in_line, in_col + 2) in
       (pos,
        LetExpr {
          decls = merge_decl_group decls;
          body =
            match exprs with
+           | [] -> (body_pos, NilExpr)
            | [expr] -> expr
            | _ -> (body_pos, SeqExpr exprs)
        })
