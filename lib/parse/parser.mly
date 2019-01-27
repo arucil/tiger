@@ -51,8 +51,10 @@ let rec merge_decl_group : Ast.decl list -> Ast.decl list = function
 
 %type <Ast.expr> prog expr
 %type <Ast.var> lvalue
+%type <(token_pos * string, token_pos * Ast.expr) either> lvalue_suffix
+%type <token_pos * Symbol.t * Ast.expr> field
 %type <Ast.ty> ty
-%type <Ast.decl> fun_decl type_decl var_decl
+%type <Ast.decl> decl fun_decl type_decl var_decl
 %type <Ast.field list> fields
 %type <Ast.param list> params
 
@@ -117,7 +119,8 @@ expr:
     }
   | pos = FOR; var_v = ID; ASSIGN; low = expr; TO; high = expr; DO; body = expr
     {
-      (pos, ForExpr { var = snd var_v; escape = ref true; low; high; body })
+      let (_, var) = var_v in
+      (pos, ForExpr { var = Symbol.sym var; escape = ref true; low; high; body })
     }
   | pos = BREAK
     {
@@ -126,12 +129,12 @@ expr:
   | ty_v = ID; LBRACE; fields = separated_list(COMMA, field); RBRACE
     {
       let (pos, ty) = ty_v in
-      (pos, RecordExpr { fields; ty })
+      (pos, RecordExpr { fields; ty = Symbol.sym ty })
     }
   | func_v = ID; LPAREN; args = separated_list(COMMA, expr); RPAREN
     {
       let (pos, func) = func_v in
-      (pos, CallExpr { func; args })
+      (pos, CallExpr { func = Symbol.sym func; args })
     }
   | var = lvalue; pos = ASSIGN; expr = expr
     {
@@ -147,22 +150,22 @@ expr:
   | ty_v = ID; LBRACK; size = expr; RBRACK; OF; init = expr
     {
       let (pos, ty) = ty_v in
-      (pos, ArrayExpr { ty; size; init })
+      (pos, ArrayExpr { ty = Symbol.sym ty; size; init })
     }
   ;
 
 field:
   | var_v = ID; EQ; expr = expr;
-    { let (pos, var) = var_v in (pos, var, expr) }
+    { let (pos, var) = var_v in (pos, Symbol.sym var, expr) }
   ;
 
 lvalue:
   | var_v = ID; xs = lvalue_suffix*
     {
       let (pos, var) = var_v in
-      List.fold xs ~init:(SimpleVar (pos, var) : Ast.var)
+      List.fold xs ~init:(SimpleVar (pos, Symbol.sym var) : Ast.var)
         ~f:(fun var -> function
-          | Left (pos, id) -> FieldVar (pos, var, id)
+          | Left (pos, id) -> FieldVar (pos, var, Symbol.sym id)
           | Right (pos, expr) -> IndexVar (pos, var, expr))
     }
   ;
@@ -184,7 +187,7 @@ type_decl:
   | pos = TYPE; name_v = ID; EQ; ty = ty
     {
       let (_, name) = name_v in
-      TypeDecl [{ name; ty; pos }]
+      TypeDecl [{ name = Symbol.sym name; ty; pos }]
     }
   ;
 
@@ -192,12 +195,19 @@ var_decl:
   | pos = VAR; name_v = ID; ASSIGN; init = expr
     {
       let (_, name) = name_v in
-      VarDecl { name; escape = ref true; ty = None; init; pos }
+      VarDecl { name = Symbol.sym name; escape = ref true; ty = None; init; pos }
     }
   | pos = VAR; name_v = ID; COLON; ty_v = ID; ASSIGN; init = expr
     {
       let (_, name) = name_v in
-      VarDecl { name; escape = ref true; ty = Some ty_v; init; pos }
+      let (ty_pos, ty) = ty_v in
+      VarDecl {
+        name = Symbol.sym name;
+        escape = ref true;
+        ty = Some (ty_pos, Symbol.sym ty);
+        init;
+        pos
+      }
     }
   ;
 
@@ -205,24 +215,34 @@ fun_decl:
   | pos = FUNCTION; name_v = ID; LPAREN; params = params; RPAREN; EQ; body = expr
     {
       let (_, name) = name_v in
-      FunDecl [{ name; params; ret = None; body; pos }]
+      FunDecl [{ name = Symbol.sym name; params; ret = None; body; pos }]
     }
   | pos = FUNCTION; name_v = ID; LPAREN; params = params; RPAREN; COLON; ret_v = ID; EQ; body = expr
     {
       let (_, name) = name_v in
-      FunDecl [{ name; params; ret = Some ret_v; body; pos }]
+      let (ret_pos, ret) = ret_v in
+      FunDecl [{
+        name = Symbol.sym name;
+        params;
+        ret = Some (ret_pos, Symbol.sym ret);
+        body;
+        pos
+      }]
     }
   ;
 
 ty:
   | id_v = ID
-    { NameType id_v }
+    {
+      let (pos, id) = id_v in
+      NameType (pos, Symbol.sym id)
+    }
   | LBRACE; fields = fields; RBRACE
     { RecordType fields }
   | pos = ARRAY; OF; id_v = ID
     {
       let (_, id) = id_v in
-      ArrayType (pos, id)
+      ArrayType (pos, Symbol.sym id)
     }
   ;
 
@@ -230,7 +250,11 @@ fields:
   | fields = separated_list(COMMA, separated_pair(ID, COLON, ID))
     {
       List.map fields ~f:(fun ((pos, name), (_, ty)) ->
-        ({ name; ty; pos } : Ast.field))
+        ({
+           name = Symbol.sym name;
+           ty = Symbol.sym ty;
+           pos }
+         : Ast.field))
     }
   ;
 
@@ -238,6 +262,11 @@ params:
   | params = separated_list(COMMA, separated_pair(ID, COLON, ID))
     {
       List.map params ~f:(fun ((pos, name), (_, ty)) ->
-        ({ name; escape = ref true; ty; pos } : Ast.param))
+        ({
+           name = Symbol.sym name;
+           escape = ref true;
+           ty = Symbol.sym ty;
+           pos }
+         : Ast.param))
     }
   ;

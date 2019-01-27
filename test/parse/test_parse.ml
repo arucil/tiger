@@ -158,14 +158,14 @@ let test_parse =
       assert_ok
         {|foo()+bar(baz(7+2),-3,"\"hey\"")|}
         ((1, 6),
-        Ast.BinaryExpr {lhs = ((1, 1), Ast.CallExpr {func = "foo"; args = []});
+        Ast.BinaryExpr {lhs = ((1, 1), Ast.CallExpr {func = Symbol.sym "foo"; args = []});
           op = Ast.AddOp;
           rhs =
           ((1, 7),
-            Ast.CallExpr {func = "bar";
+            Ast.CallExpr {func = Symbol.sym "bar";
               args =
               [((1, 11),
-                Ast.CallExpr {func = "baz";
+                Ast.CallExpr {func = Symbol.sym "baz";
                   args =
                   [((1, 16),
                     Ast.BinaryExpr {lhs = ((1, 15), (Ast.IntExpr 7)); op = Ast.AddOp;
@@ -184,21 +184,21 @@ let test_parse =
           lhs =
           ((1, 5),
             (Ast.VarExpr
-              (Ast.FieldVar ((1, 5), (Ast.SimpleVar ((1, 1), "foo")), "bar"))));
+              (Ast.FieldVar ((1, 5), (Ast.SimpleVar ((1, 1), Symbol.sym "foo")), Symbol.sym "bar"))));
           op = Ast.AddOp;
           rhs =
           ((1, 25),
             (Ast.VarExpr
               (Ast.FieldVar ((1, 25),
                   (Ast.FieldVar ((1, 21),
-                    (Ast.IndexVar ((1, 14), (Ast.SimpleVar ((1, 11), "baz")),
+                    (Ast.IndexVar ((1, 14), (Ast.SimpleVar ((1, 11), Symbol.sym "baz")),
                         ((1, 15),
                         Ast.UnaryExpr {op = Ast.NegOp;
                           rand =
-                          ((1, 16), (Ast.VarExpr (Ast.SimpleVar ((1, 16), "abc"))))})
+                          ((1, 16), (Ast.VarExpr (Ast.SimpleVar ((1, 16), Symbol.sym "abc"))))})
                         )),
-                    "qux")),
-                  "Hoge"))))}));
+                    Symbol.sym "qux")),
+                  Symbol.sym "Hoge"))))}));
 
 
     "assignment" >:: (fun _ ->
@@ -207,20 +207,20 @@ let test_parse =
         ((1, 1),
         (Ast.SeqExpr
             [((1, 4),
-              Ast.AssignExpr {var = (Ast.SimpleVar ((1, 2), "a"));
+              Ast.AssignExpr {var = (Ast.SimpleVar ((1, 2), Symbol.sym "a"));
                 expr =
                 ((1, 15),
                 Ast.AssignExpr {
                   var =
-                  (Ast.IndexVar ((1, 10), (Ast.SimpleVar ((1, 8), "bB")),
+                  (Ast.IndexVar ((1, 10), (Ast.SimpleVar ((1, 8), Symbol.sym "bB")),
                       ((1, 11), (Ast.IntExpr 27))));
                   expr = ((1, 18), (Ast.StrExpr "qaz"))})});
               ((1, 39),
               Ast.AssignExpr {
                 var =
                 (Ast.IndexVar ((1, 33),
-                    (Ast.FieldVar ((1, 30), (Ast.SimpleVar ((1, 26), "foo")), "bar")),
-                    ((1, 34), (Ast.VarExpr (Ast.SimpleVar ((1, 34), "baz"))))));
+                    (Ast.FieldVar ((1, 30), (Ast.SimpleVar ((1, 26), Symbol.sym "foo")), Symbol.sym "bar")),
+                    ((1, 34), (Ast.VarExpr (Ast.SimpleVar ((1, 34), Symbol.sym "baz"))))));
                 expr = ((1, 42), Ast.NilExpr)})
               ])));
 
@@ -229,7 +229,7 @@ let test_parse =
       assert_ok
         {|foo[2 + 3] of "jj"|}
         ((1, 1),
-        Ast.ArrayExpr {ty = "foo";
+        Ast.ArrayExpr {ty = Symbol.sym "foo";
           size =
           ((1, 7),
             Ast.BinaryExpr {lhs = ((1, 5), (Ast.IntExpr 2)); op = Ast.AddOp;
@@ -241,20 +241,20 @@ let test_parse =
       assert_ok
         {|foo { name = "abc", age = 37 * 2, baz = bar {}, biz = F { a = b } }|}
         ((1, 1),
-        Ast.RecordExpr {ty = "foo";
+        Ast.RecordExpr {ty = Symbol.sym "foo";
           fields =
-          [((1, 7), "name", ((1, 14), (Ast.StrExpr "abc")));
-            ((1, 21), "age",
+          [((1, 7), Symbol.sym "name", ((1, 14), (Ast.StrExpr "abc")));
+            ((1, 21), Symbol.sym "age",
               ((1, 30),
               Ast.BinaryExpr {lhs = ((1, 27), (Ast.IntExpr 37)); op = Ast.MulOp;
                 rhs = ((1, 32), (Ast.IntExpr 2))}));
-            ((1, 35), "baz", ((1, 41), Ast.RecordExpr {ty = "bar"; fields = []}));
-            ((1, 49), "biz",
+            ((1, 35), Symbol.sym "baz", ((1, 41), Ast.RecordExpr {ty = Symbol.sym "bar"; fields = []}));
+            ((1, 49), Symbol.sym "biz",
               ((1, 55),
-              Ast.RecordExpr {ty = "F";
+              Ast.RecordExpr {ty = Symbol.sym "F";
                 fields =
-                [((1, 59), "a",
-                  ((1, 63), (Ast.VarExpr (Ast.SimpleVar ((1, 63), "b")))))]}))
+                [((1, 59), Symbol.sym "a",
+                  ((1, 63), (Ast.VarExpr (Ast.SimpleVar ((1, 63), Symbol.sym "b")))))]}))
             ]}));
 
     "if" >:: (fun _ ->
@@ -267,7 +267,7 @@ let test_parse =
                 cond =
                 ((1, 7),
                 Ast.BinaryExpr {
-                  lhs = ((1, 5), (Ast.VarExpr (Ast.SimpleVar ((1, 5), "a"))));
+                  lhs = ((1, 5), (Ast.VarExpr (Ast.SimpleVar ((1, 5), Symbol.sym "a"))));
                   op = Ast.GtOp; rhs = ((1, 9), (Ast.IntExpr 2))});
                 conseq =
                 ((1, 18),
@@ -310,15 +310,15 @@ let test_parse =
           cond =
           ((1, 9),
             Ast.BinaryExpr {
-              lhs = ((1, 7), (Ast.VarExpr (Ast.SimpleVar ((1, 7), "a"))));
+              lhs = ((1, 7), (Ast.VarExpr (Ast.SimpleVar ((1, 7), Symbol.sym "a"))));
               op = Ast.GtOp; rhs = ((1, 11), (Ast.IntExpr 2))});
           body =
           ((1, 18),
-            Ast.AssignExpr {var = (Ast.SimpleVar ((1, 16), "a"));
+            Ast.AssignExpr {var = (Ast.SimpleVar ((1, 16), Symbol.sym "a"));
               expr =
               ((1, 23),
               Ast.BinaryExpr {
-                lhs = ((1, 21), (Ast.VarExpr (Ast.SimpleVar ((1, 21), "a"))));
+                lhs = ((1, 21), (Ast.VarExpr (Ast.SimpleVar ((1, 21), Symbol.sym "a"))));
                 op = Ast.DivOp; rhs = ((1, 25), (Ast.IntExpr 7))})})}));
 
 
@@ -326,7 +326,7 @@ let test_parse =
       assert_ok
         {|for foo := 1 + 2 to 3 * 2 do bar(foo)|}
         ((1, 1),
-        Ast.ForExpr {var = "foo"; escape = ref (true);
+        Ast.ForExpr {var = Symbol.sym "foo"; escape = ref (true);
           low =
           ((1, 14),
             Ast.BinaryExpr {lhs = ((1, 12), (Ast.IntExpr 1)); op = Ast.AddOp;
@@ -337,8 +337,8 @@ let test_parse =
               rhs = ((1, 25), (Ast.IntExpr 2))});
           body =
           ((1, 30),
-            Ast.CallExpr {func = "bar";
-              args = [((1, 34), (Ast.VarExpr (Ast.SimpleVar ((1, 34), "foo"))))]})}));
+            Ast.CallExpr {func = Symbol.sym "bar";
+              args = [((1, 34), (Ast.VarExpr (Ast.SimpleVar ((1, 34), Symbol.sym "foo"))))]})}));
 
     
     "break" >:: (fun _ ->
@@ -375,7 +375,7 @@ let test_parse =
         Ast.LetExpr {
           decls =
           [(Ast.TypeDecl
-              [{ Ast.name = "foo"; ty = (Ast.NameType ((1, 16), "bar"));
+              [{ Ast.name = Symbol.sym "foo"; ty = (Ast.NameType ((1, 16), Symbol.sym "bar"));
                   pos = (1, 5) }
                 ])
             ];
@@ -391,12 +391,12 @@ let test_parse =
         Ast.LetExpr {
           decls =
           [(Ast.TypeDecl
-              [{ Ast.name = "foo"; ty = (Ast.RecordType []); pos = (1, 5) };
-                { Ast.name = "bar";
+              [{ Ast.name = Symbol.sym "foo"; ty = (Ast.RecordType []); pos = (1, 5) };
+                { Ast.name = Symbol.sym "bar";
                   ty =
                   (Ast.RecordType
-                      [{ Ast.name = "a"; ty = "int"; pos = (1, 34) };
-                        { Ast.name = "boo"; ty = "string"; pos = (1, 43) }]);
+                      [{ Ast.name = Symbol.sym "a"; ty = Symbol.sym "int"; pos = (1, 34) };
+                        { Ast.name = Symbol.sym "boo"; ty = Symbol.sym "string"; pos = (1, 43) }]);
                   pos = (1, 21) }
                 ])
             ];
@@ -410,7 +410,7 @@ let test_parse =
         Ast.LetExpr {
           decls =
           [(Ast.TypeDecl
-              [{ Ast.name = "bar"; ty = (Ast.ArrayType ((1, 16), "int"));
+              [{ Ast.name = Symbol.sym "bar"; ty = (Ast.ArrayType ((1, 16), Symbol.sym "int"));
                   pos = (1, 5) }
                 ])
             ];
@@ -423,14 +423,14 @@ let test_parse =
         ((1, 1),
         Ast.LetExpr {
           decls =
-          [Ast.VarDecl {name = "foo"; escape = ref (true); ty = None;
+          [Ast.VarDecl {name = Symbol.sym "foo"; escape = ref (true); ty = None;
               init =
               ((1, 18),
               Ast.BinaryExpr {lhs = ((1, 16), (Ast.IntExpr 2)); op = Ast.AddOp;
                 rhs = ((1, 20), (Ast.IntExpr 3))});
               pos = (1, 5)}
             ];
-          body = ((1, 25), (Ast.VarExpr (Ast.SimpleVar ((1, 25), "foo"))))}));
+          body = ((1, 25), (Ast.VarExpr (Ast.SimpleVar ((1, 25), Symbol.sym "foo"))))}));
 
 
     "var decl, exp type" >:: (fun _ ->
@@ -439,8 +439,8 @@ let test_parse =
         ((1, 1),
         Ast.LetExpr {
           decls =
-          [Ast.VarDecl {name = "foo"; escape = ref (true);
-              ty = (Some ((1, 15), "string"));
+          [Ast.VarDecl {name = Symbol.sym "foo"; escape = ref (true);
+              ty = (Some ((1, 15), Symbol.sym "string"));
               init =
               ((1, 25),
               Ast.UnaryExpr {op = Ast.NegOp; rand = ((1, 26), (Ast.IntExpr 4))});
@@ -456,26 +456,26 @@ let test_parse =
         Ast.LetExpr {
           decls =
           [(Ast.FunDecl
-              [{ Ast.name = "foo"; params = []; ret = None;
+              [{ Ast.name = Symbol.sym "foo"; params = []; ret = None;
                   body =
                   ((1, 24),
                   Ast.BinaryExpr {lhs = ((1, 22), (Ast.IntExpr 1)); op = Ast.AddOp;
                     rhs = ((1, 26), (Ast.IntExpr 2))});
                   pos = (1, 5) };
-                { Ast.name = "bar";
+                { Ast.name = Symbol.sym "bar";
                   params =
-                  [{ Ast.name = "x"; escape = ref (true); ty = "int"; pos = (1, 41)
+                  [{ Ast.name = Symbol.sym "x"; escape = ref (true); ty = Symbol.sym "int"; pos = (1, 41)
                       };
-                    { Ast.name = "y"; escape = ref (true); ty = "string";
+                    { Ast.name = Symbol.sym "y"; escape = ref (true); ty = Symbol.sym "string";
                       pos = (1, 50) }
                     ];
                   ret = None;
                   body =
                   ((1, 66),
                     Ast.BinaryExpr {
-                      lhs = ((1, 64), (Ast.VarExpr (Ast.SimpleVar ((1, 64), "x"))));
+                      lhs = ((1, 64), (Ast.VarExpr (Ast.SimpleVar ((1, 64), Symbol.sym "x"))));
                       op = Ast.SubOp;
-                      rhs = ((1, 68), (Ast.VarExpr (Ast.SimpleVar ((1, 68), "y"))))});
+                      rhs = ((1, 68), (Ast.VarExpr (Ast.SimpleVar ((1, 68), Symbol.sym "y"))))});
                   pos = (1, 28) }
                 ])
             ];
@@ -489,18 +489,18 @@ let test_parse =
         Ast.LetExpr {
           decls =
           [(Ast.FunDecl
-              [{ Ast.name = "foo"; params = []; ret = (Some ((1, 21), "string"));
+              [{ Ast.name = Symbol.sym "foo"; params = []; ret = (Some ((1, 21), Symbol.sym "string"));
                   body = ((1, 30), (Ast.StrExpr "hh")); pos = (1, 5) };
-                { Ast.name = "bar";
+                { Ast.name = Symbol.sym "bar";
                   params =
-                  [{ Ast.name = "xx"; escape = ref (true); ty = "int"; pos = (1, 48)
+                  [{ Ast.name = Symbol.sym "xx"; escape = ref (true); ty = Symbol.sym "int"; pos = (1, 48)
                       }
                     ];
-                  ret = (Some ((1, 58), "int"));
+                  ret = (Some ((1, 58), Symbol.sym "int"));
                   body =
                   ((1, 67),
                     Ast.BinaryExpr {
-                      lhs = ((1, 64), (Ast.VarExpr (Ast.SimpleVar ((1, 64), "xx"))));
+                      lhs = ((1, 64), (Ast.VarExpr (Ast.SimpleVar ((1, 64), Symbol.sym "xx"))));
                       op = Ast.AddOp; rhs = ((1, 69), (Ast.IntExpr 1))});
                   pos = (1, 35) }
                 ])
@@ -525,15 +525,15 @@ end
  Ast.LetExpr {
    decls =
    [(Ast.TypeDecl
-       [{ Ast.name = "foo"; ty = (Ast.ArrayType ((3, 14), "int"));
+       [{ Ast.name = Symbol.sym "foo"; ty = (Ast.ArrayType ((3, 14), Symbol.sym "int"));
           pos = (3, 3) };
-         { Ast.name = "bar"; ty = (Ast.NameType ((4, 14), "foo"));
+         { Ast.name = Symbol.sym "bar"; ty = (Ast.NameType ((4, 14), Symbol.sym "foo"));
            pos = (4, 3) }
          ]);
      (Ast.FunDecl
-        [{ Ast.name = "even";
+        [{ Ast.name = Symbol.sym "even";
            params =
-           [{ Ast.name = "x"; escape = ref (true); ty = "int"; pos = (5, 17)
+           [{ Ast.name = Symbol.sym "x"; escape = ref (true); ty = Symbol.sym "int"; pos = (5, 17)
               }
              ];
            ret = None;
@@ -544,27 +544,27 @@ end
               ((5, 32),
                Ast.BinaryExpr {
                  lhs =
-                 ((5, 30), (Ast.VarExpr (Ast.SimpleVar ((5, 30), "x"))));
+                 ((5, 30), (Ast.VarExpr (Ast.SimpleVar ((5, 30), Symbol.sym "x"))));
                  op = Ast.EqOp; rhs = ((5, 34), (Ast.IntExpr 0))});
               conseq = ((5, 41), (Ast.IntExpr 1));
               alt =
               (Some ((5, 48),
-                     Ast.CallExpr {func = "odd";
+                     Ast.CallExpr {func = Symbol.sym "odd";
                        args =
                        [((5, 54),
                          Ast.BinaryExpr {
                            lhs =
                            ((5, 52),
-                            (Ast.VarExpr (Ast.SimpleVar ((5, 52), "x"))));
+                            (Ast.VarExpr (Ast.SimpleVar ((5, 52), Symbol.sym "x"))));
                            op = Ast.SubOp; rhs = ((5, 56), (Ast.IntExpr 1))})
                          ]}))});
            pos = (5, 3) };
-          { Ast.name = "odd";
+          { Ast.name = Symbol.sym "odd";
             params =
-            [{ Ast.name = "x"; escape = ref (true); ty = "int"; pos = (6, 16)
+            [{ Ast.name = Symbol.sym "x"; escape = ref (true); ty = Symbol.sym "int"; pos = (6, 16)
                }
               ];
-            ret = (Some ((6, 25), "int"));
+            ret = (Some ((6, 25), Symbol.sym "int"));
             body =
             ((6, 31),
              Ast.IfExpr {
@@ -572,29 +572,29 @@ end
                ((6, 36),
                 Ast.BinaryExpr {
                   lhs =
-                  ((6, 34), (Ast.VarExpr (Ast.SimpleVar ((6, 34), "x"))));
+                  ((6, 34), (Ast.VarExpr (Ast.SimpleVar ((6, 34), Symbol.sym "x"))));
                   op = Ast.EqOp; rhs = ((6, 38), (Ast.IntExpr 0))});
                conseq = ((6, 45), (Ast.IntExpr 0));
                alt =
                (Some ((6, 52),
-                      Ast.CallExpr {func = "even";
+                      Ast.CallExpr {func = Symbol.sym "even";
                         args =
                         [((6, 59),
                           Ast.BinaryExpr {
                             lhs =
                             ((6, 57),
-                             (Ast.VarExpr (Ast.SimpleVar ((6, 57), "x"))));
+                             (Ast.VarExpr (Ast.SimpleVar ((6, 57), Symbol.sym "x"))));
                             op = Ast.SubOp; rhs = ((6, 61), (Ast.IntExpr 1))})
                           ]}))});
             pos = (6, 3) }
           ]);
-     Ast.VarDecl {name = "abc"; escape = ref (true); ty = None;
+     Ast.VarDecl {name = Symbol.sym "abc"; escape = ref (true); ty = None;
        init =
        ((7, 14),
-        Ast.CallExpr {func = "foo"; args = [((7, 18), (Ast.IntExpr 30))]});
+        Ast.CallExpr {func = Symbol.sym "foo"; args = [((7, 18), (Ast.IntExpr 30))]});
        pos = (7, 3)};
-     Ast.VarDecl {name = "zoo"; escape = ref (true);
-       ty = (Some ((8, 13), "string"));
+     Ast.VarDecl {name = Symbol.sym "zoo"; escape = ref (true);
+       ty = (Some ((8, 13), Symbol.sym "string"));
        init = ((8, 23), (Ast.StrExpr "hey")); pos = (8, 3)}
      ];
    body = ((9, 3), Ast.NilExpr)}));

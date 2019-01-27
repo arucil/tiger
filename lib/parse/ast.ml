@@ -2,8 +2,8 @@
 open Lex.Token
 
 
-type symbol = string
-  [@@deriving show]
+type symbol = Symbol.t
+ [@@deriving show]
 
 type expr = token_pos * expr'
   [@@deriving show]
