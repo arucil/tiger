@@ -510,14 +510,95 @@ let test_parse =
 
     "mixed decl" >:: (fun _ ->
       assert_ok
-        {||}
-        ((1, 1), NilExpr));
+        {|
+let
+  type foo = array of int
+  type bar = foo
+  function even(x: int) = if x = 0 then 1 else odd(x - 1)
+  function odd(x: int): int = if x = 0 then 0 else even(x - 1)
+  var abc := foo(30)
+  var zoo : string := "hey"
+in
+end
+|}
+((2, 1),
+ Ast.LetExpr {
+   decls =
+   [(Ast.TypeDecl
+       [{ Ast.name = "foo"; ty = (Ast.ArrayType ((3, 14), "int"));
+          pos = (3, 3) };
+         { Ast.name = "bar"; ty = (Ast.NameType ((4, 14), "foo"));
+           pos = (4, 3) }
+         ]);
+     (Ast.FunDecl
+        [{ Ast.name = "even";
+           params =
+           [{ Ast.name = "x"; escape = ref (true); ty = "int"; pos = (5, 17)
+              }
+             ];
+           ret = None;
+           body =
+           ((5, 27),
+            Ast.IfExpr {
+              cond =
+              ((5, 32),
+               Ast.BinaryExpr {
+                 lhs =
+                 ((5, 30), (Ast.VarExpr (Ast.SimpleVar ((5, 30), "x"))));
+                 op = Ast.EqOp; rhs = ((5, 34), (Ast.IntExpr 0))});
+              conseq = ((5, 41), (Ast.IntExpr 1));
+              alt =
+              (Some ((5, 48),
+                     Ast.CallExpr {func = "odd";
+                       args =
+                       [((5, 54),
+                         Ast.BinaryExpr {
+                           lhs =
+                           ((5, 52),
+                            (Ast.VarExpr (Ast.SimpleVar ((5, 52), "x"))));
+                           op = Ast.SubOp; rhs = ((5, 56), (Ast.IntExpr 1))})
+                         ]}))});
+           pos = (5, 3) };
+          { Ast.name = "odd";
+            params =
+            [{ Ast.name = "x"; escape = ref (true); ty = "int"; pos = (6, 16)
+               }
+              ];
+            ret = (Some ((6, 25), "int"));
+            body =
+            ((6, 31),
+             Ast.IfExpr {
+               cond =
+               ((6, 36),
+                Ast.BinaryExpr {
+                  lhs =
+                  ((6, 34), (Ast.VarExpr (Ast.SimpleVar ((6, 34), "x"))));
+                  op = Ast.EqOp; rhs = ((6, 38), (Ast.IntExpr 0))});
+               conseq = ((6, 45), (Ast.IntExpr 0));
+               alt =
+               (Some ((6, 52),
+                      Ast.CallExpr {func = "even";
+                        args =
+                        [((6, 59),
+                          Ast.BinaryExpr {
+                            lhs =
+                            ((6, 57),
+                             (Ast.VarExpr (Ast.SimpleVar ((6, 57), "x"))));
+                            op = Ast.SubOp; rhs = ((6, 61), (Ast.IntExpr 1))})
+                          ]}))});
+            pos = (6, 3) }
+          ]);
+     Ast.VarDecl {name = "abc"; escape = ref (true); ty = None;
+       init =
+       ((7, 14),
+        Ast.CallExpr {func = "foo"; args = [((7, 18), (Ast.IntExpr 30))]});
+       pos = (7, 3)};
+     Ast.VarDecl {name = "zoo"; escape = ref (true);
+       ty = (Some ((8, 13), "string"));
+       init = ((8, 23), (Ast.StrExpr "hey")); pos = (8, 3)}
+     ];
+   body = ((9, 3), Ast.NilExpr)}));
 
-
-    "mixed" >:: (fun _ ->
-      assert_ok
-        {||}
-        ((1, 1), NilExpr))
   ]
 
 let () =
