@@ -1,29 +1,37 @@
 open Base
 
-type t = int
+module T = struct
 
-let symbols = Hashtbl.create (module String)
+    type t = int
 
-let symbol_names = Hashtbl.create (module Int)
+    let symbols = Hashtbl.create (module String)
 
-let symbol_counter = ref 0
+    let symbol_names = Hashtbl.create (module Int)
 
-let sym s =
-  Hashtbl.find_or_add symbols s
-    ~default:(fun () ->
-      let i = !symbol_counter in
-      Int.incr symbol_counter;
-      Hashtbl.add_exn symbol_names ~key:i ~data:s;
-      i)
+    let symbol_counter = ref 0
+
+    let sym s =
+      Hashtbl.find_or_add symbols s
+        ~default:(fun () ->
+          let i = !symbol_counter in
+          Int.incr symbol_counter;
+          Hashtbl.add_exn symbol_names ~key:i ~data:s;
+          i)
 
 
-let name = Hashtbl.find_exn symbol_names
+    let name = Hashtbl.find_exn symbol_names
 
 
-module Format = Caml.Format
+    module Format = Caml.Format
 
-let pp (fmt : Format.formatter) t =
-  Format.pp_print_string fmt (name t)
+    let pp (fmt : Format.formatter) t =
+      Format.pp_print_string fmt (name t)
 
-let show t =
-  Format.sprintf "\"%s\"" (name t)
+    let compare = Int.compare
+
+    let sexp_of_t t = Sexp.Atom (Int.to_string t)
+
+  end
+
+  include T
+  include Comparator.Make(T)
