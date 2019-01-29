@@ -1,7 +1,7 @@
 open Base
 open Parse
 
-type unique
+type unique = int
 
 let unique_counter = ref 0
 
