@@ -13,7 +13,7 @@ type t =
 let predefined =
   {
     vars = Symtab.empty;
-    funs = Option.value_exn (Symtab.extend_many Symtab.empty
+    funs = (Symtab.extend_many Symtab.empty
       [
         (Symbol.sym "print", ([Type.StringType], Type.UnitType));
         (Symbol.sym "flush", ([], Type.UnitType));
@@ -26,7 +26,7 @@ let predefined =
         (Symbol.sym "not", ([Type.IntType], Type.IntType));
         (Symbol.sym "exit", ([], Type.UnitType));
       ]);
-    types = Option.value_exn (Symtab.extend_many Symtab.empty
+    types = (Symtab.extend_many Symtab.empty
       [
         (Symbol.sym "int", Type.IntType);
         (Symbol.sym "string", Type.StringType);
@@ -43,16 +43,10 @@ let find_type { types; _ } name =
   Symtab.find types name
 
 let extend_var ({ vars; _ } as t) name ty =
-  match Symtab.extend vars name ty with
-  | None -> None
-  | Some vars -> Some { t with vars }
+  { t with vars = Symtab.extend vars name ty }
 
 let extend_fun ({ funs; _ } as t) name ty =
-  match Symtab.extend funs name ty with
-  | None -> None
-  | Some funs -> Some { t with funs }
+  { t with funs = Symtab.extend funs name ty }
 
 let extend_type ({ types; _ } as t) name ty =
-  match Symtab.extend types name ty with
-  | None -> None
-  | Some types -> Some { t with types }
+  { t with types = Symtab.extend types name ty }

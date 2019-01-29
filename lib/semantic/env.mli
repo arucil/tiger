@@ -13,8 +13,8 @@ val find_fun : t -> Symbol.t -> fun_type option
 
 val find_type : t -> Symbol.t -> Type.t option
 
-val extend_var : t -> Symbol.t -> Type.t -> t option
+val extend_var : t -> Symbol.t -> Type.t -> t
 
-val extend_fun : t -> Symbol.t -> fun_type -> t option
+val extend_fun : t -> Symbol.t -> fun_type -> t
 
-val extend_type : t -> Symbol.t -> Type.t -> t option
+val extend_type : t -> Symbol.t -> Type.t -> t

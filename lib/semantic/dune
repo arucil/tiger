@@ -1,3 +1,3 @@
 (library
   (name semantic)
-  (libraries base parse))
+  (libraries base parse errors))

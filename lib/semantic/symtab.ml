@@ -5,16 +5,11 @@ type 'a t = (Symbol.t, 'a, Symbol.comparator_witness) Map.t
 
 let empty = Map.empty (module Symbol)
 
-let extend t key data =
-  match Map.add t ~key ~data with
-  | `Duplicate -> None
-  | `Ok t' -> Some t'
+let extend t sym data =
+  Map.update t sym ~f:(fun _ -> data)
 
-let rec extend_many t = function
-  | [] -> Some t
-  | ((key, data) :: xs) ->
-    match extend t key data with
-    | None -> None
-    | Some t' -> extend_many t' xs
+let rec extend_many t =
+  List.fold ~init:t
+    ~f:(fun t (sym, data) -> extend t sym data)
 
 let find t key = Map.find t key
