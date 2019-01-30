@@ -12,7 +12,7 @@ type t =
   | ArrayType of t * unique
   | NilType
   | UnitType
-  | AliasType of Symbol.t * t option ref
+  | AliasType of { name : Symbol.t; mutable ty : t option }
 
 val show : t -> string
 

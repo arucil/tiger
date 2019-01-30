@@ -120,7 +120,7 @@ expr:
   | pos = FOR; var_v = ID; ASSIGN; low = expr; TO; high = expr; DO; body = expr
     {
       let (_, var) = var_v in
-      (pos, ForExpr { var = Symbol.sym var; escape = ref true; low; high; body })
+      (pos, ForExpr { var = Symbol.sym var; escape = true; low; high; body })
     }
   | pos = BREAK
     {
@@ -195,7 +195,7 @@ var_decl:
   | pos = VAR; name_v = ID; ASSIGN; init = expr
     {
       let (_, name) = name_v in
-      VarDecl { name = Symbol.sym name; escape = ref true; ty = None; init; pos }
+      VarDecl { name = Symbol.sym name; escape = true; ty = None; init; pos }
     }
   | pos = VAR; name_v = ID; COLON; ty_v = ID; ASSIGN; init = expr
     {
@@ -203,7 +203,7 @@ var_decl:
       let (ty_pos, ty) = ty_v in
       VarDecl {
         name = Symbol.sym name;
-        escape = ref true;
+        escape = true;
         ty = Some (ty_pos, Symbol.sym ty);
         init;
         pos
@@ -235,7 +235,7 @@ ty:
   | id_v = ID
     {
       let (pos, id) = id_v in
-      NameType (pos, Symbol.sym id)
+      AliasType (pos, Symbol.sym id)
     }
   | LBRACE; fields = fields; RBRACE
     { RecordType fields }
@@ -264,7 +264,7 @@ params:
       List.map params ~f:(fun ((pos, name), (_, ty)) ->
         ({
            name = Symbol.sym name;
-           escape = ref true;
+           escape = true;
            ty = Symbol.sym ty;
            pos }
          : Ast.param))

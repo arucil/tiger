@@ -1,3 +1,3 @@
 open Parse.Ast
 
-val transExpr : ?in_loop:bool -> Env.t -> expr -> Type.t
+val transProg : expr -> Type.t

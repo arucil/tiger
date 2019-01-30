@@ -3,7 +3,7 @@ open Lex.Token
 
 
 type symbol = Symbol.t
- [@@deriving show]
+  [@@deriving show]
 
 type expr = token_pos * expr'
   [@@deriving show]
@@ -22,7 +22,7 @@ and expr' =
   | AssignExpr of { var : var; expr : expr }
   | IfExpr of { cond : expr; conseq : expr; alt : expr option }
   | WhileExpr of { cond : expr; body : expr }
-  | ForExpr of { var : symbol; escape : bool ref; low : expr; high : expr; body : expr }
+  | ForExpr of { var : symbol; mutable escape : bool; low : expr; high : expr; body : expr }
   | BreakExpr
   | LetExpr of { decls : decl list; body : expr }
   [@@deriving show]
@@ -45,7 +45,7 @@ and uop =
 
 and decl =
   | FunDecl of fundecl list
-  | VarDecl of { name : symbol; escape : bool ref; ty : (token_pos * symbol) option; init : expr; pos : token_pos }
+  | VarDecl of { name : symbol; mutable escape : bool; ty : (token_pos * symbol) option; init : expr; pos : token_pos }
   | TypeDecl of typedecl list
   [@@deriving show]
 
@@ -54,7 +54,7 @@ and fundecl =
   [@@deriving show]
 
 and param =
-  { name : symbol; escape : bool ref; ty : symbol; pos : token_pos }
+  { name : symbol; mutable escape : bool; ty : symbol; pos : token_pos }
   [@@deriving show]
 
 and typedecl =
@@ -62,7 +62,7 @@ and typedecl =
   [@@deriving show]
 
 and ty =
-  | NameType of (token_pos * symbol)
+  | AliasType of (token_pos * symbol)
   | RecordType of field list
   | ArrayType of (token_pos * symbol)
   [@@deriving show]

@@ -8,7 +8,7 @@ let empty = Map.empty (module Symbol)
 let extend t sym data =
   Map.update t sym ~f:(fun _ -> data)
 
-let rec extend_many t =
+let extend_many t =
   List.fold ~init:t
     ~f:(fun t (sym, data) -> extend t sym data)
 

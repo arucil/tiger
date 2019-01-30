@@ -17,14 +17,14 @@ type t =
   | ArrayType of t * unique
   | NilType
   | UnitType
-  | AliasType of Symbol.t * t option ref
+  | AliasType of { name : Symbol.t; mutable ty : t option }
 
 let rec show = function
   | IntType -> "int"
   | StringType -> "string"
   | UnitType -> "unit"
   | NilType -> "nil"
-  | AliasType (sym, _) -> Printf.sprintf "alias '%s'" (Symbol.name sym)
+  | AliasType { name; _ } -> Printf.sprintf "alias '%s'" (Symbol.name name)
   | RecordType (fields, u) -> Printf.sprintf "#%d { %s }"
       u
       (List.map ~f:(fun (sym, ty) ->
@@ -42,9 +42,9 @@ let is_array = function
   | _ -> false
 
 let rec actual_type = function
-  | AliasType (_, r) ->
+  | AliasType { ty; _ } ->
     begin
-      match !r with
+      match ty with
       | Some ty -> actual_type ty
       | None ->
         let exception Unreachable in

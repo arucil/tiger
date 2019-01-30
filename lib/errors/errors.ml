@@ -8,5 +8,7 @@ let report (line, col) fmt =
     (fun oc -> Stdio.Out_channel.newline oc)
     !oc fmt
 
-let set_out_channel oc' =
+let set_out oc' =
   oc := oc'
+
+let out () = !oc
