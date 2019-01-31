@@ -424,7 +424,111 @@ let rec transExpr (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t =
   and trfundecls env fundecls = trfun_mutrec_decls env fundecls
 
   (* perform semantic analysis on mutually recursive function declarations *)
-  and trfun_mutrec_decls env fundecls = env
+  and trfun_mutrec_decls env = function
+    | [{ name; params; ret; body; pos }] ->
+      (* single function declaration *)
+      let param_names = List.map params ~f:(fun p -> p.name) in
+      let param_tys = List.map params ~f:(fun { name; ty; pos } ->
+        match Env.find_type env ty with
+        | None ->
+          Errors.report pos "undefined type: %s" (Symbol.name ty);
+          Type.IntType
+        | Some ty -> Type.actual_type ty)
+      in
+      let body_ty = ref None in
+      let ret_ty =
+        match ret with
+        | Some (ret_pos, ret_sym) ->
+          (match Env.find_type env ret_sym with
+          | None ->
+            Errors.report ret_pos "undefined type: %s" (Symbol.name ret_sym);
+            Type.IntType
+          | Some ret_ty ->
+            Type.actual_type ret_ty)
+        | None ->
+          if Set.mem (expr_fun_deps body) name then
+            (Errors.report pos "recursive function must specify return type";
+            Type.IntType)
+          else
+            (let ret_ty = transExpr false
+              (List.fold2_exn param_names param_tys ~init:env ~f:Env.extend_var)
+              body
+             in
+             body_ty := Some ret_ty;
+             ret_ty)
+      in
+      let env' = Env.extend_fun env name (param_tys, ret_ty) in
+      if Poly.(!body_ty = None) then
+        body_ty := Some (transExpr false
+          (List.fold2_exn param_names param_tys ~init:env' ~f:Env.extend_var)
+          body);
+
+      env'
+
+    | _ -> ()
+
+  (* get a set of functions the given expression depends on *)
+  and expr_fun_deps (pos, expr) : (Symbol.t, Symbol.comparator_witness) Set.t =
+    let open Ast in
+    match expr with
+    | VarExpr var -> var_fun_deps var
+    | CallExpr { func; args } ->
+      Set.add (List.map args ~f:expr_fun_deps |> Set.union_list (module Symbol)) func
+    | BinaryExpr { lhs; rhs; _ } ->
+      Set.union (expr_fun_deps lhs) (expr_fun_deps rhs)
+    | UnaryExpr { rand; _ } -> expr_fun_deps rand
+    | RecordExpr { fields; _ } ->
+      List.map fields ~f:(fun (_, _, expr) -> expr_fun_deps expr)
+        |> Set.union_list (module Symbol)
+    | ArrayExpr { size; init; _ } ->
+      Set.union (expr_fun_deps size) (expr_fun_deps init)
+    | SeqExpr exprs ->
+      List.map exprs ~f:expr_fun_deps |> Set.union_list (module Symbol)
+    | AssignExpr { var; expr } ->
+      Set.union (expr_fun_deps expr) (var_fun_deps var)
+    | IfExpr { cond; conseq; alt } ->
+      let alt_deps = Option.value_map alt ~default:(Set.empty (module Symbol)) ~f:expr_fun_deps
+      in
+      Set.union_list (module Symbol) [expr_fun_deps cond; expr_fun_deps conseq; alt_deps]
+    | WhileExpr { cond; body } ->
+      Set.union (expr_fun_deps cond) (expr_fun_deps body)
+    | ForExpr { low; high; body; _ } ->
+      List.map [low; high; body] ~f:expr_fun_deps |> Set.union_list (module Symbol)
+    | LetExpr { decls; body } ->
+      Set.diff (expr_fun_deps body) (decls_funs decls)
+        |> Set.union (decls_fun_deps (Set.empty (module Symbol)) decls)
+    | NilExpr | IntExpr _ | StrExpr _ | BreakExpr -> Set.empty (module Symbol)
+
+  and var_fun_deps =
+    let open Ast in
+    function
+    | SimpleVar _ -> Set.empty (module Symbol)
+    | IndexVar (_, var, expr) ->
+      Set.union (var_fun_deps var) (expr_fun_deps expr)
+    | FieldVar (_, var, _) -> var_fun_deps var
+
+  and decls_funs decls =
+    List.map decls ~f:(function
+      | FunDecl fundecls ->
+        List.map fundecls ~f:(fun d -> d.name) |> Set.of_list (module Symbol)
+      | VarDecl _ | TypeDecl _ -> Set.empty (module Symbol))
+      |> Set.union_list (module Symbol)
+
+  and decls_fun_deps funs = function
+    | [] -> Set.empty (module Symbol)
+    | VarDecl d :: decls ->
+      decls_fun_deps funs decls |> Set.union (expr_fun_deps d.init)
+    | TypeDecl _ :: decls ->
+      decls_fun_deps funs decls
+    | FunDecl fundecls :: decls -> 
+        let deps = List.map fundecls ~f:(fun d -> expr_fun_deps d.body)
+          |> Set.union_list (module Symbol)
+        in
+        let funs = List.map fundecls ~f:(fun d -> d.name)
+          |> Set.of_list (module Symbol)
+          |> Set.union funs
+        in
+          decls_fun_deps funs decls |> Set.union (Set.diff deps funs)
 
   in
     trexpr expr
