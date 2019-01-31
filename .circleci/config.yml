@@ -5,6 +5,6 @@ jobs:
       - image: ocaml/opam2
     steps:
       - checkout
-      - run: apt-get install m4
+      - run: sudo apt-get install m4
       - run: opam install --deps-only .
       - run: dune build bin/tiger.exe
