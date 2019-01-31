@@ -149,7 +149,7 @@ let rec transExpr (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t =
             if List.length fields <> List.length actual_fields then
               Errors.report pos "expected %d fields, got %d fields"
                 (List.length fields) (List.length actual_fields);
-            Utils.iter2 check_field fields actual_fields;
+            Utils.List.iter2 check_field fields actual_fields;
             ty
           | _ ->
             Errors.report pos "expected record type for record creation, got %s type"
@@ -179,7 +179,7 @@ let rec transExpr (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t =
         if List.length params <> List.length args' then
           Errors.report pos "expected %d parameters, got %d arguments"
             (List.length params) (List.length args');
-        Utils.iter2i check_arg params args';
+        Utils.List.iter2i check_arg params args';
         Type.actual_type ret
       end
 
@@ -323,7 +323,7 @@ let rec transExpr (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t =
             | AliasType r ->
               r.ty <- Some (trty env' ty)
             | _ ->
-              Utils.unreachable ());
+              Utils.Exn.unreachable ());
 
     (* report duplicate type declarations *)
     ignore (List.fold tydecls ~init:[]
@@ -336,10 +336,10 @@ let rec transExpr (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t =
     (* report cyclic type declarations *)
     let rec check_cycle ty_pos accum_ty_names ty_name =
       match Env.find_type env ty_name with
-      | None -> Utils.unreachable ()
+      | None -> Utils.Exn.unreachable ()
       | Some (Type.AliasType { ty; _ }) ->
         (match ty with
-        | None -> Utils.unreachable ()
+        | None -> Utils.Exn.unreachable ()
         | Some (Type.AliasType alias) ->
           if List.mem accum_ty_names alias.name ~equal:Poly.(=) then
             begin

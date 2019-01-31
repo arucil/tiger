@@ -11,5 +11,3 @@ val update : ('a -> bool) -> 'a -> 'a list -> 'a list
 
 (** fold from right on two lists, ignoring unequal length *)
 val fold_right2 : ('a -> 'b -> 'c -> 'c) -> 'c -> 'a list -> 'b list -> 'c
-
-val unreachable : unit -> 'a

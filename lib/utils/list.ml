@@ -25,7 +25,3 @@ let rec fold_right2 f z xs ys =
   match xs, ys with
   | (x :: xs'), (y :: ys') -> fold_right2 f z xs' ys' |> f x y
   | _ -> z
-
-let unreachable () =
-  let exception Unreachable in
-  raise Unreachable
