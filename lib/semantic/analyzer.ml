@@ -323,8 +323,7 @@ let rec transExpr (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t =
             | AliasType r ->
               r.ty <- Some (trty env' ty)
             | _ ->
-              let exception Unreachable in
-              raise Unreachable);
+              Utils.unreachable ());
 
     (* report duplicate type declarations *)
     ignore (List.fold tydecls ~init:[]
@@ -334,7 +333,37 @@ let rec transExpr (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t =
                 (Symbol.name tydecl.name);
             tydecl :: tydecls));
 
-    (* TODO: report cyclic type declaration *)
+    (* report cyclic type declarations *)
+    let rec check_cycle ty_pos accum_ty_names ty_name =
+      match Env.find_type env ty_name with
+      | None -> Utils.unreachable ()
+      | Some (Type.AliasType { name; ty }) ->
+        (match ty with
+        | None -> Utils.unreachable ()
+        | Some (Type.AliasType alias) ->
+          if List.mem accum_ty_names alias.name ~equal:Poly.(=) then
+            begin
+              let cyclic_names = (alias.name :: List.take_while accum_ty_names
+                ~f:(Poly.(<>) alias.name))
+              in
+              Errors.report ty_pos "cyclic type detected: %s"
+                (List.map cyclic_names ~f:Symbol.name |> String.concat ~sep:", ");
+              cyclic_names
+            end
+          else
+            check_cycle ty_pos (alias.name :: accum_ty_names) alias.name
+        | Some _ -> [])
+      | Some _ -> []
+    in
+    (* fold from right so that the earlier duplicate type declarations won't be checked *)
+    ignore (List.fold_right tydecls ~init:[]
+      ~f:(fun tydecl accum_ty_names ->
+            (* if type duplicates or cycles are detected, these types won't be checked again *)
+            if List.mem accum_ty_names tydecl.name ~equal:Poly.(=) then
+              accum_ty_names
+            else
+              let cyclic_names = check_cycle tydecl.pos [tydecl.name] tydecl.name in
+              tydecl.name :: (cyclic_names @ accum_ty_names)));
 
     env'
 
@@ -390,6 +419,8 @@ let rec transExpr (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t =
   and field_name_eq (field1 : Ast.field) (field2 : Ast.field) =
     field1.name = field2.name
 
+  (* TODO: separate a group of function declarations into groups of mutually
+     recursive functions with strongly connected components *)
   and trfundecls env fundecls = trfun_mutrec_decls env fundecls
 
   (* perform semantic analysis on mutually recursive function declarations *)

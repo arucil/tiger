@@ -46,9 +46,7 @@ let rec actual_type = function
     begin
       match ty with
       | Some ty -> actual_type ty
-      | None ->
-        let exception Unreachable in
-        raise Unreachable
+      | None -> Utils.unreachable ()
     end
   | ty -> ty
 
