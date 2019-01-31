@@ -337,7 +337,7 @@ let rec transExpr (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t =
     let rec check_cycle ty_pos accum_ty_names ty_name =
       match Env.find_type env ty_name with
       | None -> Utils.unreachable ()
-      | Some (Type.AliasType { name; ty }) ->
+      | Some (Type.AliasType { ty; _ }) ->
         (match ty with
         | None -> Utils.unreachable ()
         | Some (Type.AliasType alias) ->
@@ -371,31 +371,11 @@ let rec transExpr (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t =
     decl1.name = decl2.name
 
   and trty env : Ast.ty -> Type.t = function
-    | AliasType (pos, sym) ->
-      begin
-        match Env.find_type env sym with
-        | None ->
-          Errors.report pos "undefined type: %s" (Symbol.name sym);
-          Type.IntType
-        | Some ty -> ty
-      end
-    | ArrayType (pos, sym) ->
-      begin
-        match Env.find_type env sym with
-        | None ->
-          Errors.report pos "undefined type: %s" (Symbol.name sym);
-          Type.ArrayType (Type.IntType, Type.new_unique ())
-        | Some ty ->
-          Type.ArrayType (ty, Type.new_unique ())
-      end
+    | AliasType (pos, sym) -> sym_type env pos sym
+    | ArrayType (pos, sym) -> Type.ArrayType (sym_type env pos sym, Type.new_unique ())
     | RecordType fields ->
       let fields' = List.map fields
-        ~f:(fun { name; ty; pos } ->
-              match Env.find_type env ty with
-              | None ->
-                Errors.report pos "undefined type: %s" (Symbol.name ty);
-                (name, Type.IntType)
-              | Some ty -> (name, ty))
+        ~f:(fun { name; ty; pos } -> (name, sym_type env pos ty))
       in
 
       (* report duplicate fields *)
@@ -427,26 +407,17 @@ let rec transExpr (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t =
   and trfun_mutrec_decls env = function
     | [{ name; params; ret; body; pos }] ->
       (* single function declaration *)
-      let param_names = List.map params ~f:(fun p -> p.name) in
       check_dup_params [] params;
-      
-      let param_tys = List.map params ~f:(fun p ->
-        match Env.find_type env p.ty with
-        | None ->
-          Errors.report p.pos "undefined type: %s" (Symbol.name p.ty);
-          Type.IntType
-        | Some ty -> Type.actual_type ty)
+
+      let param_names = List.map params ~f:(fun p -> p.name) in
+      let param_tys = List.map params
+        ~f:(fun p -> Type.actual_type (sym_type env p.pos p.ty))
       in
       let body_ty = ref None in
       let ret_ty =
         match ret with
         | Some (ret_pos, ret_sym) ->
-          (match Env.find_type env ret_sym with
-          | None ->
-            Errors.report ret_pos "undefined type: %s" (Symbol.name ret_sym);
-            Type.IntType
-          | Some ret_ty ->
-            Type.actual_type ret_ty)
+          Type.actual_type (sym_type env ret_pos ret_sym)
         | None ->
           if Set.mem (expr_fun_deps body) name then
             (Errors.report pos "recursive function must specify return type";
@@ -455,19 +426,66 @@ let rec transExpr (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t =
             (let ret_ty = transExpr false
               (List.fold2_exn param_names param_tys ~init:env ~f:Env.extend_var)
               body
-             in
-             body_ty := Some ret_ty;
-             ret_ty)
+            in
+            let ret_ty =
+              if Poly.(ret_ty = Type.NilType) then
+                (Errors.report pos "function returning nil must specify return type";
+                Type.RecordType ([], Type.new_unique ()))
+              else
+                ret_ty
+            in
+            body_ty := Some ret_ty;
+            ret_ty)
       in
       let env' = Env.extend_fun env name (param_tys, ret_ty) in
+
+      (* if the body haven't been checked above, check it now *)
       if Poly.(!body_ty = None) then
-        body_ty := Some (transExpr false
-          (List.fold2_exn param_names param_tys ~init:env' ~f:Env.extend_var)
-          body);
+        begin
+          let ty = transExpr false
+            (List.fold2_exn param_names param_tys ~init:env' ~f:Env.extend_var)
+            body
+          in
+            if not (Type.is_compatible ret_ty ty) then
+              Errors.report pos "expected %s type for function body, got %s type"
+                (Type.show ret_ty) (Type.show ty);
+            body_ty := Some ty
+        end;
 
       env'
 
-    | _ -> ()
+    | fundecls ->
+      let fun_tys = List.map fundecls ~f:(fun d ->
+        let param_tys = List.map d.params
+          ~f:(fun p -> Type.actual_type (sym_type env p.pos p.ty))
+        in
+        let ret_ty =
+          match d.ret with
+          | None ->
+            Errors.report d.pos "mutual recursive functions must specify return types";
+            Type.IntType
+          | Some (ret_pos, ret_sym) ->
+            Type.actual_type (sym_type env ret_pos ret_sym)
+        in
+          (param_tys, ret_ty))
+      in
+      let fun_names = List.map fundecls ~f:(fun d -> d.name) in
+      let env' = List.fold2_exn fun_names fun_tys ~init:env ~f:Env.extend_fun in
+
+      (* check each function *)
+      List.iter2_exn fundecls fun_tys ~f:(fun fundecl (param_tys, ret_ty) ->
+        check_dup_params [] fundecl.params;
+
+        let param_names = List.map fundecl.params ~f:(fun p -> p.name) in
+        let body_ty = transExpr false
+          (List.fold2_exn param_names param_tys ~init:env' ~f:Env.extend_var)
+          fundecl.body
+        in
+        if not (Type.is_compatible ret_ty body_ty) then
+          Errors.report fundecl.pos "expected %s type for function body, got %s type"
+            (Type.show ret_ty) (Type.show body_ty));
+
+      env'
 
   and check_dup_params accum_param_names = function
     | [] -> ()
@@ -479,7 +497,7 @@ let rec transExpr (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t =
         check_dup_params (param.name :: accum_param_names) params
 
   (* get a set of functions the given expression depends on *)
-  and expr_fun_deps (pos, expr) : (Symbol.t, Symbol.comparator_witness) Set.t =
+  and expr_fun_deps (_, expr) : (Symbol.t, Symbol.comparator_witness) Set.t =
     let open Ast in
     match expr with
     | VarExpr var -> var_fun_deps var
@@ -540,6 +558,13 @@ let rec transExpr (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t =
           |> Set.union funs
         in
           decls_fun_deps funs decls |> Set.union (Set.diff deps funs)
+
+  and sym_type env pos sym =
+    match Env.find_type env sym with
+    | None ->
+      Errors.report pos "undefined type: %s" (Symbol.name sym);
+      Type.IntType
+    | Some ty -> ty
 
   in
     trexpr expr
