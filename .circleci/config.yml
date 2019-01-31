@@ -1,0 +1,9 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: ocaml/opam2
+    steps:
+      - checkout
+      - run: opam install --deps-only .
+      - run: dune build bin/tiger.exe
