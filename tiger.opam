@@ -6,6 +6,7 @@ maintainer: "amlo <xplzjwz@gmail.com>"
 authors: "amlo <xplzjwz@gmail.com>"
 license: "MIT"
 depends: [
+  "dune"
   "base"
   "stdio"
   "menhir"
