@@ -36,7 +36,7 @@ dune exec bin/tiger.exe
 
 # Testing
 
-The unit tests is built and run with Dune.
+The unit tests are built and run with Dune.
 
 ```bash
 dune runtest               # Run all tests
