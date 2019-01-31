@@ -428,10 +428,12 @@ let rec transExpr (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t =
     | [{ name; params; ret; body; pos }] ->
       (* single function declaration *)
       let param_names = List.map params ~f:(fun p -> p.name) in
-      let param_tys = List.map params ~f:(fun { name; ty; pos } ->
-        match Env.find_type env ty with
+      check_dup_params [] params;
+      
+      let param_tys = List.map params ~f:(fun p ->
+        match Env.find_type env p.ty with
         | None ->
-          Errors.report pos "undefined type: %s" (Symbol.name ty);
+          Errors.report p.pos "undefined type: %s" (Symbol.name p.ty);
           Type.IntType
         | Some ty -> Type.actual_type ty)
       in
@@ -466,6 +468,15 @@ let rec transExpr (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t =
       env'
 
     | _ -> ()
+
+  and check_dup_params accum_param_names = function
+    | [] -> ()
+    | param :: params ->
+      if List.mem accum_param_names param.name ~equal:Poly.(=) then
+        (Errors.report param.pos "duplicate paramater: %s" (Symbol.name param.name);
+        check_dup_params accum_param_names params)
+      else
+        check_dup_params (param.name :: accum_param_names) params
 
   (* get a set of functions the given expression depends on *)
   and expr_fun_deps (pos, expr) : (Symbol.t, Symbol.comparator_witness) Set.t =
