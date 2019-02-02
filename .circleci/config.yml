@@ -13,3 +13,8 @@ jobs:
           command: |
             eval $(opam env)
             dune build bin/tiger.exe
+      - run:
+          name: Test
+          command: |
+            eval $(opam env)
+            dune runtest
