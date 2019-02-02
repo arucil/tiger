@@ -87,7 +87,6 @@ expr:
   | pos = LPAREN; exprs = separated_list(SEMI, expr); RPAREN
     {
       match exprs with
-      | [] -> (pos, NilExpr)
       | [expr] -> expr
       | _ -> (pos, SeqExpr exprs)
     }
@@ -100,7 +99,6 @@ expr:
          decls = merge_decl_group decls;
          body =
            match exprs with
-           | [] -> (body_pos, NilExpr)
            | [expr] -> expr
            | _ -> (body_pos, SeqExpr exprs)
        })

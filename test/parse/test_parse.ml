@@ -59,14 +59,18 @@ let test_parse =
 
     "primitive" >:: (fun _ ->
       assert_ok
-        {|123*"he\ty" - ()|}
-        ((1, 13),
+        {|123*"he\ty" - () + nil|}
+        ((1, 18),
         Ast.BinaryExpr {
           lhs =
-          ((1, 4),
-           Ast.BinaryExpr {lhs = ((1, 1), (Ast.IntExpr 123)); op = Ast.MulOp;
-             rhs = ((1, 5), (Ast.StrExpr "he\ty"))});
-          op = Ast.SubOp; rhs = ((1, 15), Ast.NilExpr)}));
+          ((1, 13),
+            Ast.BinaryExpr {
+              lhs =
+              ((1, 4),
+              Ast.BinaryExpr {lhs = ((1, 1), (Ast.IntExpr 123)); op = Ast.MulOp;
+                rhs = ((1, 5), (Ast.StrExpr "he\ty"))});
+              op = Ast.SubOp; rhs = ((1, 15), (Ast.SeqExpr []))});
+          op = Ast.AddOp; rhs = ((1, 20), Ast.NilExpr)}));
 
 
     "sequence" >:: (fun _ ->
@@ -145,7 +149,7 @@ let test_parse =
                     ((1, 7),
                     Ast.BinaryExpr {lhs = ((1, 5), (Ast.IntExpr 3)); op = Ast.EqOp;
                       rhs = ((1, 9), (Ast.IntExpr 3))});
-                    op = Ast.AndOp; rhs = ((1, 13), Ast.NilExpr)});
+                    op = Ast.AndOp; rhs = ((1, 13), Ast.SeqExpr [])});
                 op = Ast.AndOp; rhs = ((1, 18), (Ast.IntExpr 99))})});
           op = Ast.OrOp;
           rhs =
@@ -221,7 +225,7 @@ let test_parse =
                 (Ast.IndexVar ((1, 33),
                     (Ast.FieldVar ((1, 30), (Ast.SimpleVar ((1, 26), Symbol.sym "foo")), Symbol.sym "bar")),
                     ((1, 34), (Ast.VarExpr (Ast.SimpleVar ((1, 34), Symbol.sym "baz"))))));
-                expr = ((1, 42), Ast.NilExpr)})
+                expr = ((1, 42), Ast.SeqExpr [])})
               ])));
 
 
@@ -365,7 +369,7 @@ let test_parse =
         {|let in let in end end|}
         ((1, 1),
         Ast.LetExpr {decls = [];
-          body = ((1, 8), Ast.LetExpr {decls = []; body = ((1, 14), Ast.NilExpr)})}));
+          body = ((1, 8), Ast.LetExpr {decls = []; body = ((1, 14), Ast.SeqExpr [])})}));
 
 
     "type alias decl" >:: (fun _ ->
@@ -400,7 +404,7 @@ let test_parse =
                   pos = (1, 21) }
                 ])
             ];
-          body = ((1, 60), Ast.NilExpr)}));
+          body = ((1, 60), Ast.SeqExpr [])}));
 
 
     "array decl" >:: (fun _ ->
@@ -414,7 +418,7 @@ let test_parse =
                   pos = (1, 5) }
                 ])
             ];
-          body = ((1, 31), Ast.NilExpr)}));
+          body = ((1, 31), Ast.SeqExpr [])}));
 
 
     "var decl, imp type" >:: (fun _ ->
@@ -446,7 +450,7 @@ let test_parse =
               Ast.UnaryExpr {op = Ast.NegOp; rand = ((1, 26), (Ast.IntExpr 4))});
               pos = (1, 5)}
             ];
-          body = ((1, 30), Ast.NilExpr)}));
+          body = ((1, 30), Ast.SeqExpr [])}));
 
 
     "fun decl, imp type" >:: (fun _ ->
@@ -479,7 +483,7 @@ let test_parse =
                   pos = (1, 28) }
                 ])
             ];
-          body = ((1, 72), Ast.NilExpr)}));
+          body = ((1, 72), Ast.SeqExpr [])}));
 
 
     "fun decl, exp type" >:: (fun _ ->
@@ -505,7 +509,7 @@ let test_parse =
                   pos = (1, 35) }
                 ])
             ];
-          body = ((1, 73), Ast.NilExpr)}));
+          body = ((1, 73), Ast.SeqExpr [])}));
 
 
     "mixed decl" >:: (fun _ ->
@@ -597,7 +601,7 @@ end
        ty = (Some ((8, 13), Symbol.sym "string"));
        init = ((8, 23), (Ast.StrExpr "hey")); pos = (8, 3)}
      ];
-   body = ((9, 3), Ast.NilExpr)}));
+   body = ((9, 3), Ast.SeqExpr [])}));
 
   ]
 
