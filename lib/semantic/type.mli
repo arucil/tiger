@@ -3,7 +3,7 @@ open Parse
 
 type unique
 
-val new_unique : unit -> unique
+type unique_store
 
 type t =
   | IntType
@@ -23,3 +23,15 @@ val is_array : t -> bool
 val actual_type : t -> t
 
 val is_compatible : t -> t -> bool
+
+(** works on cyclic type *)
+val (=) : t -> t -> bool
+
+(** works on cyclic type *)
+val (<>) : t -> t -> bool
+
+val eq_ignore_unique : t -> t -> bool
+
+val new_unique_store : unit -> unique_store
+
+val new_unique : unique_store -> unique
