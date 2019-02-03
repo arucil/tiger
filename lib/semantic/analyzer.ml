@@ -12,7 +12,7 @@ let rec transExpr (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t =
     | NilExpr -> Type.NilType
     | UnaryExpr { op; rand } -> trunary pos op rand
     | BinaryExpr { lhs; op; rhs } -> trbinary pos lhs rhs op
-    | VarExpr var -> trvar var
+    | VarExpr var -> fst (trvar var)
     | SeqExpr exprs ->
       if List.is_empty exprs then
         Type.UnitType
@@ -34,36 +34,39 @@ let rec transExpr (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t =
         match Env.find_var env sym with
         | None ->
           Errors.report pos "undefined variable: %s" (Symbol.name sym);
-          Type.IntType
+          (Type.IntType, true)
         | Some (FunEntry _) ->
           Errors.report pos "function must be called: %s" (Symbol.name sym);
-          Type.IntType
-        | Some (VarEntry ty) -> Type.actual_type ty
+          (Type.IntType, true)
+        | Some (VarEntry (ty, assignable)) ->
+          (Type.actual_type ty, assignable)
       end
     | FieldVar (pos, var, sym) ->
       begin
         match trvar var with
-        | RecordType (fields, _) as ty ->
+        | RecordType (fields, _) as ty, _ ->
           begin
             match List.Assoc.find fields sym ~equal:(=) with
             | None -> 
               Errors.report pos "%s type has no field named %s"
                 (Type.show ty) (Symbol.name sym);
-              Type.IntType
-            | Some ty -> Type.actual_type ty
+              (Type.IntType, true)
+            | Some ty ->
+              (Type.actual_type ty, true)
           end
-        | ty ->
+        | ty, _ ->
           Errors.report pos "expected record type, got %s type" (Type.show ty);
-          ty
+          (ty, true)
       end
     | IndexVar (pos, var, ((ix_pos, _) as expr)) ->
       begin
         check_int ix_pos (trexpr expr);
         match trvar var with
-        | ArrayType (elem_ty, _) -> Type.actual_type elem_ty
-        | ty ->
+        | ArrayType (elem_ty, _), _ ->
+          (Type.actual_type elem_ty, true)
+        | ty, _ ->
           Errors.report pos "expected array type, got %s type" (Type.show ty);
-          ty
+          (ty, true)
       end
 
   (* report non-int type *)
@@ -124,9 +127,15 @@ let rec transExpr (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t =
       end
 
   and trassign pos var expr =
-      let var_ty = trvar var in
+      let (var_ty, assignable) = trvar var in
       let expr_ty = trexpr expr in
       begin
+        if not assignable then
+          (match var with
+          | SimpleVar (pos, sym) ->
+            Errors.report pos "variable cannot be assigned to: %s"
+              (Symbol.name sym)
+          | _ -> Utils.Exn.unreachable ());
         if not (Type.is_compatible var_ty expr_ty) then
           Errors.report pos "expected %s type for assignment, got %s type"
             (Type.show var_ty) (Type.show expr_ty);
@@ -260,7 +269,7 @@ let rec transExpr (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t =
       Errors.report pos "expected int type for higher bound of for expression, got %s type"
         (Type.show high_ty);
 
-    let body_ty = transExpr true (Env.extend_var env var (VarEntry Type.IntType)) body in
+    let body_ty = transExpr true (Env.extend_var env var (VarEntry (Type.IntType, false))) body in
 
     if body_ty <> Type.IntType then
       Errors.report pos "expected unit type for body of for expression, got %s type"
@@ -312,7 +321,7 @@ let rec transExpr (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t =
         else
           init_ty
     in
-    Env.extend_var env name (VarEntry var_ty)
+    Env.extend_var env name (VarEntry (var_ty, true))
 
   and trtydecls env tydecls =
     let ty_names = List.map tydecls ~f:(fun d -> d.name) in
@@ -439,7 +448,7 @@ let rec transExpr (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t =
       let param_names = List.map fundecl.params ~f:(fun p -> p.name) in
       let body_ty = transExpr false
         (List.fold2_exn param_names param_tys ~init:env'
-          ~f:(fun env name ty -> Env.extend_var env name (VarEntry ty)))
+          ~f:(fun env name ty -> Env.extend_var env name (VarEntry (ty, true))))
         fundecl.body
       in
       if not (Type.is_compatible ret_ty body_ty) then

@@ -5,8 +5,11 @@ type t
 
 type fun_type = Type.t list * Type.t
 
+(** the variable's type, and if it's assignable *)
+type var_type = Type.t * bool
+
 type entry =
-  | VarEntry of Type.t
+  | VarEntry of var_type
   | FunEntry of fun_type
 
 val predefined : t

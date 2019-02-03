@@ -3,8 +3,10 @@ open Parse
 
 type fun_type = Type.t list * Type.t
 
+type var_type = Type.t * bool
+
 type entry =
-  | VarEntry of Type.t
+  | VarEntry of var_type
   | FunEntry of fun_type
 
 type t =
