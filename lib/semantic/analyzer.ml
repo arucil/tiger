@@ -13,7 +13,11 @@ let rec transExpr (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t =
     | UnaryExpr { op; rand } -> trunary pos op rand
     | BinaryExpr { lhs; op; rhs } -> trbinary pos lhs rhs op
     | VarExpr var -> trvar var
-    | SeqExpr exprs -> List.map ~f:trexpr exprs |> List.last_exn
+    | SeqExpr exprs ->
+      if List.is_empty exprs then
+        Type.UnitType
+      else
+        List.map ~f:trexpr exprs |> List.last_exn
     | AssignExpr { var; expr } -> trassign pos var expr
     | RecordExpr { ty; fields } -> trrecord pos ty fields
     | ArrayExpr { ty; size; init } -> trarray pos ty size init
@@ -399,93 +403,37 @@ let rec transExpr (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t =
   and field_name_eq (field1 : Ast.field) (field2 : Ast.field) =
     field1.name = field2.name
 
-  (* TODO: separate a group of function declarations into groups of mutually
-     recursive functions with strongly connected components *)
-  and trfundecls env fundecls = trfun_mutrec_decls env fundecls
-
-  (* perform semantic analysis on mutually recursive function declarations *)
-  and trfun_mutrec_decls env = function
-    | [{ name; params; ret; body; pos }] ->
-      (* single function declaration *)
-      check_dup_params [] params;
-
-      let param_names = List.map params ~f:(fun p -> p.name) in
-      let param_tys = List.map params
+  (* perform semantic analysis on consecutive function declarations *)
+  and trfundecls env fundecls =
+    let fun_tys = List.map fundecls ~f:(fun d ->
+      let param_tys = List.map d.params
         ~f:(fun p -> Type.actual_type (sym_type env p.pos p.ty))
       in
-      let body_ty = ref None in
       let ret_ty =
-        match ret with
+        match d.ret with
+        | None -> Type.UnitType
         | Some (ret_pos, ret_sym) ->
           Type.actual_type (sym_type env ret_pos ret_sym)
-        | None ->
-          if Set.mem (expr_fun_deps body) name then
-            (Errors.report pos "recursive function must specify return type";
-            Type.IntType)
-          else
-            (let ret_ty = transExpr false
-              (List.fold2_exn param_names param_tys ~init:env ~f:Env.extend_var)
-              body
-            in
-            let ret_ty =
-              if Poly.(ret_ty = Type.NilType) then
-                (Errors.report pos "function returning nil must specify return type";
-                Type.RecordType ([], Type.new_unique ()))
-              else
-                ret_ty
-            in
-            body_ty := Some ret_ty;
-            ret_ty)
       in
-      let env' = Env.extend_fun env name (param_tys, ret_ty) in
+        (param_tys, ret_ty))
+    in
+    let fun_names = List.map fundecls ~f:(fun d -> d.name) in
+    let env' = List.fold2_exn fun_names fun_tys ~init:env ~f:Env.extend_fun in
 
-      (* if the body haven't been checked above, check it now *)
-      if Poly.(!body_ty = None) then
-        begin
-          let ty = transExpr false
-            (List.fold2_exn param_names param_tys ~init:env' ~f:Env.extend_var)
-            body
-          in
-            if not (Type.is_compatible ret_ty ty) then
-              Errors.report pos "expected %s type for function body, got %s type"
-                (Type.show ret_ty) (Type.show ty);
-            body_ty := Some ty
-        end;
+    (* check each function *)
+    List.iter2_exn fundecls fun_tys ~f:(fun fundecl (param_tys, ret_ty) ->
+      check_dup_params [] fundecl.params;
 
-      env'
-
-    | fundecls ->
-      let fun_tys = List.map fundecls ~f:(fun d ->
-        let param_tys = List.map d.params
-          ~f:(fun p -> Type.actual_type (sym_type env p.pos p.ty))
-        in
-        let ret_ty =
-          match d.ret with
-          | None ->
-            Errors.report d.pos "mutual recursive functions must specify return types";
-            Type.IntType
-          | Some (ret_pos, ret_sym) ->
-            Type.actual_type (sym_type env ret_pos ret_sym)
-        in
-          (param_tys, ret_ty))
+      let param_names = List.map fundecl.params ~f:(fun p -> p.name) in
+      let body_ty = transExpr false
+        (List.fold2_exn param_names param_tys ~init:env' ~f:Env.extend_var)
+        fundecl.body
       in
-      let fun_names = List.map fundecls ~f:(fun d -> d.name) in
-      let env' = List.fold2_exn fun_names fun_tys ~init:env ~f:Env.extend_fun in
+      if not (Type.is_compatible ret_ty body_ty) then
+        Errors.report fundecl.pos "expected %s type for function body, got %s type"
+          (Type.show ret_ty) (Type.show body_ty));
 
-      (* check each function *)
-      List.iter2_exn fundecls fun_tys ~f:(fun fundecl (param_tys, ret_ty) ->
-        check_dup_params [] fundecl.params;
-
-        let param_names = List.map fundecl.params ~f:(fun p -> p.name) in
-        let body_ty = transExpr false
-          (List.fold2_exn param_names param_tys ~init:env' ~f:Env.extend_var)
-          fundecl.body
-        in
-        if not (Type.is_compatible ret_ty body_ty) then
-          Errors.report fundecl.pos "expected %s type for function body, got %s type"
-            (Type.show ret_ty) (Type.show body_ty));
-
-      env'
+    env'
 
   and check_dup_params accum_param_names = function
     | [] -> ()
@@ -495,69 +443,6 @@ let rec transExpr (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t =
         check_dup_params accum_param_names params)
       else
         check_dup_params (param.name :: accum_param_names) params
-
-  (* get a set of functions the given expression depends on *)
-  and expr_fun_deps (_, expr) : (Symbol.t, Symbol.comparator_witness) Set.t =
-    let open Ast in
-    match expr with
-    | VarExpr var -> var_fun_deps var
-    | CallExpr { func; args } ->
-      Set.add (List.map args ~f:expr_fun_deps |> Set.union_list (module Symbol)) func
-    | BinaryExpr { lhs; rhs; _ } ->
-      Set.union (expr_fun_deps lhs) (expr_fun_deps rhs)
-    | UnaryExpr { rand; _ } -> expr_fun_deps rand
-    | RecordExpr { fields; _ } ->
-      List.map fields ~f:(fun (_, _, expr) -> expr_fun_deps expr)
-        |> Set.union_list (module Symbol)
-    | ArrayExpr { size; init; _ } ->
-      Set.union (expr_fun_deps size) (expr_fun_deps init)
-    | SeqExpr exprs ->
-      List.map exprs ~f:expr_fun_deps |> Set.union_list (module Symbol)
-    | AssignExpr { var; expr } ->
-      Set.union (expr_fun_deps expr) (var_fun_deps var)
-    | IfExpr { cond; conseq; alt } ->
-      let alt_deps = Option.value_map alt ~default:(Set.empty (module Symbol)) ~f:expr_fun_deps
-      in
-      Set.union_list (module Symbol) [expr_fun_deps cond; expr_fun_deps conseq; alt_deps]
-    | WhileExpr { cond; body } ->
-      Set.union (expr_fun_deps cond) (expr_fun_deps body)
-    | ForExpr { low; high; body; _ } ->
-      List.map [low; high; body] ~f:expr_fun_deps |> Set.union_list (module Symbol)
-    | LetExpr { decls; body } ->
-      Set.diff (expr_fun_deps body) (decls_funs decls)
-        |> Set.union (decls_fun_deps (Set.empty (module Symbol)) decls)
-    | NilExpr | IntExpr _ | StrExpr _ | BreakExpr -> Set.empty (module Symbol)
-
-  and var_fun_deps =
-    let open Ast in
-    function
-    | SimpleVar _ -> Set.empty (module Symbol)
-    | IndexVar (_, var, expr) ->
-      Set.union (var_fun_deps var) (expr_fun_deps expr)
-    | FieldVar (_, var, _) -> var_fun_deps var
-
-  and decls_funs decls =
-    List.map decls ~f:(function
-      | FunDecl fundecls ->
-        List.map fundecls ~f:(fun d -> d.name) |> Set.of_list (module Symbol)
-      | VarDecl _ | TypeDecl _ -> Set.empty (module Symbol))
-      |> Set.union_list (module Symbol)
-
-  and decls_fun_deps funs = function
-    | [] -> Set.empty (module Symbol)
-    | VarDecl d :: decls ->
-      decls_fun_deps funs decls |> Set.union (expr_fun_deps d.init)
-    | TypeDecl _ :: decls ->
-      decls_fun_deps funs decls
-    | FunDecl fundecls :: decls -> 
-        let deps = List.map fundecls ~f:(fun d -> expr_fun_deps d.body)
-          |> Set.union_list (module Symbol)
-        in
-        let funs = List.map fundecls ~f:(fun d -> d.name)
-          |> Set.of_list (module Symbol)
-          |> Set.union funs
-        in
-          decls_fun_deps funs decls |> Set.union (Set.diff deps funs)
 
   and sym_type env pos sym =
     match Env.find_type env sym with
