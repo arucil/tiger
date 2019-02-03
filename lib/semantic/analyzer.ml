@@ -424,6 +424,14 @@ let rec transExpr (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t =
       ~f:(fun env name ty -> Env.extend_var env name (FunEntry ty))
     in
 
+    (* report duplicate function declarations *)
+    ignore (List.fold fundecls ~init:[]
+      ~f:(fun fundecls fundecl ->
+            if List.exists fundecls ~f:(fundecl_name_eq fundecl) then
+              Errors.report fundecl.pos "duplicate function declaration: %s"
+                (Symbol.name fundecl.name);
+            fundecl :: fundecls));
+
     (* check each function *)
     List.iter2_exn fundecls fun_tys ~f:(fun fundecl (param_tys, ret_ty) ->
       check_dup_params [] fundecl.params;
@@ -439,6 +447,9 @@ let rec transExpr (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t =
           (Type.show ret_ty) (Type.show body_ty));
 
     env'
+
+  and fundecl_name_eq (decl1 : Ast.fundecl) (decl2 : Ast.fundecl) =
+    decl1.name = decl2.name
 
   and check_dup_params accum_param_names = function
     | [] -> ()
