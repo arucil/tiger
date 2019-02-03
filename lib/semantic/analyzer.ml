@@ -70,8 +70,8 @@ let rec transExpr (new_unique : unit -> Type.unique) (in_loop : bool) (env : Env
   (* report non-int type *)
   and check_int pos ty operand =
     if Type.(ty <> Type.IntType) then
-      Errors.report pos "expected %s type for %s, got %s type"
-        (Type.show Type.IntType) operand (Type.show ty)
+      Errors.report pos "expected int type for %s, got %s type"
+        operand (Type.show ty)
 
   (* check operand type for equality/non-equality operator*)
   and check_eq_type pos ty operand =
@@ -236,6 +236,7 @@ let rec transExpr (new_unique : unit -> Type.unique) (in_loop : bool) (env : Env
         match ty with
         | ArrayType (elem_ty, _) ->
           begin
+            let elem_ty = Type.actual_type elem_ty in
             if Type.(elem_ty <> init_ty) then
               Errors.report pos "expected %s type for initial value of array, got %s type"
                 (Type.show elem_ty) (Type.show init_ty);
@@ -274,13 +275,8 @@ let rec transExpr (new_unique : unit -> Type.unique) (in_loop : bool) (env : Env
     let low_ty = trexpr low in
     let high_ty = trexpr high in
 
-    if Type.(low_ty <> Type.IntType) then
-      Errors.report pos "expected int type for lower bound of for loop, got %s type"
-        (Type.show low_ty);
-
-    if Type.(high_ty <> Type.IntType) then
-      Errors.report pos "expected int type for higher bound of for loop, got %s type"
-        (Type.show high_ty);
+    check_int pos low_ty "lower bound of for loop";
+    check_int pos high_ty "higher bound of for loop";
 
     let body_ty = transExpr new_unique true (Env.extend_var env var (VarEntry (Type.IntType, false))) body in
 
@@ -363,7 +359,7 @@ let rec transExpr (new_unique : unit -> Type.unique) (in_loop : bool) (env : Env
             tydecl :: tydecls));
 
     (* report cyclic type declarations *)
-    let rec check_cycle ty_pos accum_ty_names ty_name =
+    let rec check_cycle ignored_ty_names ty_pos accum_ty_names ty_name =
       match Env.find_type env' ty_name with
       | None -> Utils.Exn.unreachable ()
       | Some (Type.AliasType { ty; _ }) ->
@@ -375,12 +371,15 @@ let rec transExpr (new_unique : unit -> Type.unique) (in_loop : bool) (env : Env
               let cyclic_names = (alias.name :: List.take_while accum_ty_names
                 ~f:(Symbol.(<>) alias.name))
               in
-              Errors.report ty_pos "cyclic type detected: %s"
-                (List.map cyclic_names ~f:Symbol.name |> String.concat ~sep:", ");
+              if not (List.exists cyclic_names
+                ~f:(fun name -> List.mem ignored_ty_names name ~equal:Symbol.(=)))
+                then
+                Errors.report ty_pos "cyclic aliases detected: %s"
+                  (List.map cyclic_names ~f:Symbol.name |> String.concat ~sep:", ");
               cyclic_names
             end
           else
-            check_cycle ty_pos (alias.name :: accum_ty_names) alias.name
+            check_cycle ignored_ty_names ty_pos (alias.name :: accum_ty_names) alias.name
         | Some _ -> [])
       | Some _ -> []
     in
@@ -391,7 +390,7 @@ let rec transExpr (new_unique : unit -> Type.unique) (in_loop : bool) (env : Env
             if List.mem accum_ty_names tydecl.name ~equal:Symbol.(=) then
               accum_ty_names
             else
-              let cyclic_names = check_cycle tydecl.pos [tydecl.name] tydecl.name in
+              let cyclic_names = check_cycle accum_ty_names tydecl.pos [tydecl.name] tydecl.name in
               tydecl.name :: (cyclic_names @ accum_ty_names)));
 
     env'
