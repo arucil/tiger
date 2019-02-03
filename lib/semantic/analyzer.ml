@@ -1,9 +1,7 @@
 open Base
 open Parse
-open Poly
 
-
-let rec transExpr (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t =
+let rec transExpr (new_unique : unit -> Type.unique) (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t =
   let rec trexpr ((pos, expr) : Ast.expr) : Type.t =
     let open Ast in
     match expr with
@@ -36,7 +34,7 @@ let rec transExpr (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t =
           Errors.report pos "undefined variable: %s" (Symbol.name sym);
           (Type.IntType, true)
         | Some (FunEntry _) ->
-          Errors.report pos "function must be called: %s" (Symbol.name sym);
+          Errors.report pos "cannot use function as variable: %s" (Symbol.name sym);
           (Type.IntType, true)
         | Some (VarEntry (ty, assignable)) ->
           (Type.actual_type ty, assignable)
@@ -46,7 +44,7 @@ let rec transExpr (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t =
         match trvar var with
         | RecordType (fields, _) as ty, _ ->
           begin
-            match List.Assoc.find fields sym ~equal:(=) with
+            match List.Assoc.find fields sym ~equal:Symbol.(=) with
             | None -> 
               Errors.report pos "%s type has no field named %s"
                 (Type.show ty) (Symbol.name sym);
@@ -55,36 +53,36 @@ let rec transExpr (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t =
               (Type.actual_type ty, true)
           end
         | ty, _ ->
-          Errors.report pos "expected record type, got %s type" (Type.show ty);
+          Errors.report pos "expected record type for field selection, got %s type" (Type.show ty);
           (ty, true)
       end
     | IndexVar (pos, var, ((ix_pos, _) as expr)) ->
       begin
-        check_int ix_pos (trexpr expr);
+        check_int ix_pos (trexpr expr) "index";
         match trvar var with
         | ArrayType (elem_ty, _), _ ->
           (Type.actual_type elem_ty, true)
         | ty, _ ->
-          Errors.report pos "expected array type, got %s type" (Type.show ty);
+          Errors.report pos "cannot index on %s type" (Type.show ty);
           (ty, true)
       end
 
   (* report non-int type *)
-  and check_int pos ty =
-    if ty <> Type.IntType then
-      Errors.report pos "expected %s type, got %s type"
-        (Type.show Type.IntType) (Type.show ty)
+  and check_int pos ty operand =
+    if Type.(ty <> Type.IntType) then
+      Errors.report pos "expected %s type for %s, got %s type"
+        (Type.show Type.IntType) operand (Type.show ty)
 
   (* check operand type for equality/non-equality operator*)
-  and check_eq_type pos ty =
-    if ty <> Type.IntType && ty <> Type.StringType && ty <> Type.NilType
+  and check_eq_type pos ty operand =
+    if Type.(ty <> Type.IntType && ty <> Type.StringType && ty <> Type.NilType)
         && not (Type.is_record ty) && not (Type.is_array ty) then
-      Errors.report pos "expected int, string, nil, record or array type, got %s type"
-        (Type.show ty)
+      Errors.report pos "expected int, string, record or array type for %s, got %s type"
+        operand (Type.show ty)
 
   and trunary _pos _op ((rand_pos, _) as rand) =
     let rand_ty = trexpr rand in
-    check_int rand_pos rand_ty;
+    check_int rand_pos rand_ty "operand of negation";
     Type.IntType
 
   and trbinary pos ((lhs_pos, _) as lhs) ((rhs_pos, _) as rhs) op =
@@ -93,40 +91,55 @@ let rec transExpr (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t =
     match op with
     | AddOp | SubOp | MulOp | DivOp | AndOp | OrOp ->
       begin
-        check_int lhs_pos lhs_ty;
-        check_int rhs_pos rhs_ty;
+        check_int lhs_pos lhs_ty ("left-hand side of " ^ opstr op);
+        check_int rhs_pos rhs_ty ("right-hand side of " ^ opstr op);
         Type.IntType
       end
     | EqOp | NeqOp ->
       begin
-        check_eq_type lhs_pos lhs_ty;
-        check_eq_type rhs_pos rhs_ty;
+        check_eq_type lhs_pos lhs_ty ("left-hand side of " ^ opstr op);
+        check_eq_type rhs_pos rhs_ty ("right-hand side of " ^ opstr op);
 
         if not (Type.is_compatible lhs_ty rhs_ty) then
-          Errors.report pos "operand types incompatible for equality operator";
+          Errors.report pos "incompatible operand types for %s"
+            (opstr op);
 
-        if lhs_ty = Type.NilType && rhs_ty = Type.NilType then
-          Errors.report pos "cannot determine the type of the operands";
+        if Type.(lhs_ty = Type.NilType && rhs_ty = Type.NilType) then
+          Errors.report pos "cannot determine the types of the operands";
 
         Type.IntType
       end
     | GtOp | LtOp | GeOp | LeOp ->
       begin
-        if lhs_ty <> Type.IntType && lhs_ty <> Type.StringType then
-          Errors.report lhs_pos "expected int or string type, got %s type"
-            (Type.show lhs_ty);
+        if Type.(lhs_ty <> Type.IntType && lhs_ty <> Type.StringType) then
+          Errors.report lhs_pos "expected int or string type for left-hand side of %s, got %s type"
+            (opstr op) (Type.show lhs_ty);
 
-        if rhs_ty <> Type.IntType && rhs_ty <> Type.StringType then
-          Errors.report rhs_pos "expected int or string type, got %s type"
-            (Type.show rhs_ty);
+        if Type.(rhs_ty <> Type.IntType && rhs_ty <> Type.StringType) then
+          Errors.report rhs_pos "expected int or string type for right-hand side of %s, got %s type"
+            (opstr op) (Type.show rhs_ty);
 
-        if lhs_ty <> rhs_ty then
-          Errors.report pos "operand type incompatible for comparison operator";
+        if Type.(lhs_ty <> rhs_ty) then
+          Errors.report pos "incompatible operand types for %s" (opstr op);
 
         Type.IntType
       end
 
-  and trassign pos var expr =
+  and opstr : Ast.op -> string = function
+    | AddOp -> "'+'"
+    | SubOp -> "'-'"
+    | MulOp -> "'*'"
+    | DivOp -> "'/'"
+    | AndOp -> "'&'"
+    | OrOp -> "'|'"
+    | EqOp -> "'='"
+    | NeqOp -> "'<>'"
+    | GtOp -> "'>'"
+    | GeOp -> "'>='"
+    | LtOp -> "'<'"
+    | LeOp -> "'<='"
+
+  and trassign _pos var ((expr_pos, _) as expr) =
       let (var_ty, assignable) = trvar var in
       let expr_ty = trexpr expr in
       begin
@@ -137,7 +150,7 @@ let rec transExpr (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t =
               (Symbol.name sym)
           | _ -> Utils.Exn.unreachable ());
         if not (Type.is_compatible var_ty expr_ty) then
-          Errors.report pos "expected %s type for assignment, got %s type"
+          Errors.report expr_pos "expected %s type for right-hand side of assignment, got %s type"
             (Type.show var_ty) (Type.show expr_ty);
         Type.UnitType
       end
@@ -152,7 +165,7 @@ let rec transExpr (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t =
         Errors.report pos "undefined record type: %s" (Symbol.name ty_sym);
         Type.RecordType
           (List.map ~f:(fun (_, sym, ty) -> (sym, ty)) actual_fields,
-           Type.new_unique ())
+          new_unique ())
       | Some ty ->
         begin
           let ty = Type.actual_type ty in
@@ -167,15 +180,15 @@ let rec transExpr (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t =
             Errors.report pos "expected record type for record creation, got %s type"
               (Type.show ty);
             (* empty record type *)
-            Type.RecordType ([], Type.new_unique ())
+            Type.RecordType ([], new_unique ())
         end
     end
 
   (* check the types of a field of a record type and that of the record creation
-     are compatible *)
+    are compatible *)
   and check_field (field_sym, field_ty) (pos, actual_sym, actual_ty) =
     let field_ty = Type.actual_type field_ty in
-    if field_sym <> actual_sym || not (Type.is_compatible field_ty actual_ty) then
+    if Symbol.(field_sym <> actual_sym) || not (Type.is_compatible field_ty actual_ty) then
       Errors.report pos "expected field '%s' of %s type, got field '%s' of %s type"
         (Symbol.name field_sym) (Type.show field_ty)
         (Symbol.name actual_sym) (Type.show actual_ty)
@@ -210,20 +223,20 @@ let rec transExpr (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t =
     let size_ty = trexpr size_expr in
     let init_ty = trexpr init_expr in
     begin
-      if size_ty <> Type.IntType then
-        Errors.report size_pos "expected %s type for array size, got %s type"
-          (Type.show Type.IntType) (Type.show size_ty);
+      if Type.(size_ty <> Type.IntType) then
+        Errors.report size_pos "expected int type for array size, got %s type"
+          (Type.show size_ty);
 
       match Env.find_type env ty_sym with
       | None ->
         Errors.report pos "undefined array type: %s" (Symbol.name ty_sym);
-        Type.ArrayType (init_ty, Type.new_unique ())
+        Type.ArrayType (init_ty, new_unique ())
       | Some ty ->
         let ty = Type.actual_type ty in
         match ty with
         | ArrayType (elem_ty, _) ->
           begin
-            if elem_ty <> init_ty then
+            if Type.(elem_ty <> init_ty) then
               Errors.report pos "expected %s type for initial value of array, got %s type"
                 (Type.show elem_ty) (Type.show init_ty);
             ty
@@ -231,7 +244,7 @@ let rec transExpr (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t =
         | _ ->
           Errors.report pos "expected array type for array creation, got %s type"
             (Type.show ty);
-          Type.ArrayType (init_ty, Type.new_unique ())
+          Type.ArrayType (init_ty, new_unique ())
     end
 
   and trif pos cond conseq alt =
@@ -239,21 +252,21 @@ let rec transExpr (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t =
     let conseq_ty = trexpr conseq in
     let alt_ty = Option.value_map alt ~default:Type.UnitType ~f:trexpr
     in
-      if cond_ty <> Type.IntType then
+      if Type.(cond_ty <> Type.IntType) then
         Errors.report pos "expected int type for condition of if expression, got %s type"
           (Type.show cond_ty);
       if not (Type.is_compatible conseq_ty alt_ty) then
-        Errors.report pos "branch types incompatible for if expression";
+        Errors.report pos "incompatible branch types for if expression";
       conseq_ty
 
   and trwhile pos cond body =
     let cond_ty = trexpr cond in
-    let body_ty = transExpr true env body in
-    if cond_ty <> Type.IntType then
-      Errors.report pos "expected int type for condition of while expression, got %s type"
+    let body_ty = transExpr new_unique true env body in
+    if Type.(cond_ty <> Type.IntType) then
+      Errors.report pos "expected int type for condition of while loop, got %s type"
         (Type.show cond_ty);
-    if body_ty <> Type.UnitType then
-      Errors.report pos "expected unit type for body of while expression, got %s type"
+    if Type.(body_ty <> Type.UnitType) then
+      Errors.report pos "expected unit type for body of while loop, got %s type"
         (Type.show body_ty);
     Type.UnitType
 
@@ -261,18 +274,18 @@ let rec transExpr (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t =
     let low_ty = trexpr low in
     let high_ty = trexpr high in
 
-    if low_ty <> Type.IntType then
-      Errors.report pos "expected int type for lower bound of for expression, got %s type"
+    if Type.(low_ty <> Type.IntType) then
+      Errors.report pos "expected int type for lower bound of for loop, got %s type"
         (Type.show low_ty);
 
-    if high_ty <> Type.IntType then
-      Errors.report pos "expected int type for higher bound of for expression, got %s type"
+    if Type.(high_ty <> Type.IntType) then
+      Errors.report pos "expected int type for higher bound of for loop, got %s type"
         (Type.show high_ty);
 
-    let body_ty = transExpr true (Env.extend_var env var (VarEntry (Type.IntType, false))) body in
+    let body_ty = transExpr new_unique true (Env.extend_var env var (VarEntry (Type.IntType, false))) body in
 
-    if body_ty <> Type.IntType then
-      Errors.report pos "expected unit type for body of for expression, got %s type"
+    if Type.(body_ty <> Type.UnitType) then
+      Errors.report pos "expected unit type for body of for loop, got %s type"
         (Type.show body_ty);
 
     Type.UnitType
@@ -283,7 +296,7 @@ let rec transExpr (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t =
     Type.UnitType
 
   and trlet _pos decls body =
-    transExpr in_loop (trdecls env decls) body
+    transExpr new_unique in_loop (trdecls env decls) body
 
   and trdecls env decls =
     List.fold decls ~init:env ~f:trdecl
@@ -294,7 +307,7 @@ let rec transExpr (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t =
     | FunDecl fundecls -> trfundecls env fundecls
 
   and trvardecl env name ty init pos =
-    let init_ty = transExpr in_loop env init in
+    let init_ty = transExpr new_unique in_loop env init in
     let var_ty =
       match ty with
       | Some (ty_pos, ty_sym) ->
@@ -302,21 +315,22 @@ let rec transExpr (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t =
           match Env.find_type env ty_sym with
           | None ->
             Errors.report ty_pos "undefined type: %s" (Symbol.name ty_sym);
-            if init_ty = Type.NilType then
-              Type.RecordType ([], Type.new_unique ())
+            if Type.(init_ty = Type.NilType) then
+              Type.RecordType ([], new_unique ())
             else
               init_ty
           | Some ty ->
             let ty = Type.actual_type ty in
             if not (Type.is_compatible ty init_ty) then
-              Errors.report pos "type incompatible for variable declaration";
+              Errors.report pos "expected %s type for variable initialization, got %s type"
+                (Type.show ty) (Type.show init_ty);
             ty
         end
       | None ->
-        if init_ty = Type.NilType then
+        if Type.(init_ty = Type.NilType) then
           begin
             Errors.report pos "variable declaration must specify type for nil initial value";
-            Type.RecordType ([], Type.new_unique ())
+            Type.RecordType ([], new_unique ())
           end
         else
           init_ty
@@ -350,16 +364,16 @@ let rec transExpr (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t =
 
     (* report cyclic type declarations *)
     let rec check_cycle ty_pos accum_ty_names ty_name =
-      match Env.find_type env ty_name with
+      match Env.find_type env' ty_name with
       | None -> Utils.Exn.unreachable ()
       | Some (Type.AliasType { ty; _ }) ->
         (match ty with
         | None -> Utils.Exn.unreachable ()
         | Some (Type.AliasType alias) ->
-          if List.mem accum_ty_names alias.name ~equal:Poly.(=) then
+          if List.mem accum_ty_names alias.name ~equal:Symbol.(=) then
             begin
               let cyclic_names = (alias.name :: List.take_while accum_ty_names
-                ~f:(Poly.(<>) alias.name))
+                ~f:(Symbol.(<>) alias.name))
               in
               Errors.report ty_pos "cyclic type detected: %s"
                 (List.map cyclic_names ~f:Symbol.name |> String.concat ~sep:", ");
@@ -370,11 +384,11 @@ let rec transExpr (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t =
         | Some _ -> [])
       | Some _ -> []
     in
-    (* fold from right so that the earlier duplicate type declarations won't be checked *)
+    (* fold from right so that earlier duplicate type declarations won't be checked *)
     ignore (List.fold_right tydecls ~init:[]
       ~f:(fun tydecl accum_ty_names ->
             (* if type duplicates or cycles are detected, these types won't be checked again *)
-            if List.mem accum_ty_names tydecl.name ~equal:Poly.(=) then
+            if List.mem accum_ty_names tydecl.name ~equal:Symbol.(=) then
               accum_ty_names
             else
               let cyclic_names = check_cycle tydecl.pos [tydecl.name] tydecl.name in
@@ -383,11 +397,11 @@ let rec transExpr (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t =
     env'
 
   and tydecl_name_eq (decl1 : Ast.typedecl) (decl2 : Ast.typedecl) =
-    decl1.name = decl2.name
+    Symbol.(decl1.name = decl2.name)
 
   and trty env : Ast.ty -> Type.t = function
     | AliasType (pos, sym) -> sym_type env pos sym
-    | ArrayType (pos, sym) -> Type.ArrayType (sym_type env pos sym, Type.new_unique ())
+    | ArrayType (pos, sym) -> Type.ArrayType (sym_type env pos sym, new_unique ())
     | RecordType fields ->
       let fields' = List.map fields
         ~f:(fun { name; ty; pos } -> (name, sym_type env pos ty))
@@ -404,15 +418,15 @@ let rec transExpr (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t =
       (* if fields have duplicates, keep the latest *)
       let fields' = List.fold_right fields' ~init:[]
         ~f:(fun ((sym, _) as field) fields ->
-              if List.Assoc.mem fields ~equal:(=) sym then
+              if List.Assoc.mem fields ~equal:Symbol.(=) sym then
                 fields
               else
                 field :: fields)
       in
-        Type.RecordType (fields', Type.new_unique ())
+        Type.RecordType (fields', new_unique ())
 
   and field_name_eq (field1 : Ast.field) (field2 : Ast.field) =
-    field1.name = field2.name
+    Symbol.(field1.name = field2.name)
 
   (* perform semantic analysis on consecutive function declarations *)
   and trfundecls env fundecls =
@@ -446,7 +460,7 @@ let rec transExpr (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t =
       check_dup_params [] fundecl.params;
 
       let param_names = List.map fundecl.params ~f:(fun p -> p.name) in
-      let body_ty = transExpr false
+      let body_ty = transExpr new_unique false
         (List.fold2_exn param_names param_tys ~init:env'
           ~f:(fun env name ty -> Env.extend_var env name (VarEntry (ty, true))))
         fundecl.body
@@ -458,12 +472,12 @@ let rec transExpr (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t =
     env'
 
   and fundecl_name_eq (decl1 : Ast.fundecl) (decl2 : Ast.fundecl) =
-    decl1.name = decl2.name
+    Symbol.(decl1.name = decl2.name)
 
   and check_dup_params accum_param_names = function
     | [] -> ()
     | param :: params ->
-      if List.mem accum_param_names param.name ~equal:Poly.(=) then
+      if List.mem accum_param_names param.name ~equal:Symbol.(=) then
         (Errors.report param.pos "duplicate paramater: %s" (Symbol.name param.name);
         check_dup_params accum_param_names params)
       else
@@ -479,4 +493,7 @@ let rec transExpr (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t =
   in
     trexpr expr
 
-let transProg expr = transExpr false Env.predefined expr
+let transProg (expr : Ast.expr) =
+  let unique_store = Type.new_unique_store () in
+  let new_unique () = Type.new_unique unique_store in
+  transExpr new_unique false Env.predefined expr
