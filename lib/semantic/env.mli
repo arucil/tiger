@@ -5,16 +5,16 @@ type t
 
 type fun_type = Type.t list * Type.t
 
+type entry =
+  | VarEntry of Type.t
+  | FunEntry of fun_type
+
 val predefined : t
 
-val find_var : t -> Symbol.t -> Type.t option
-
-val find_fun : t -> Symbol.t -> fun_type option
+val find_var : t -> Symbol.t -> entry option
 
 val find_type : t -> Symbol.t -> Type.t option
 
-val extend_var : t -> Symbol.t -> Type.t -> t
-
-val extend_fun : t -> Symbol.t -> fun_type -> t
+val extend_var : t -> Symbol.t -> entry -> t
 
 val extend_type : t -> Symbol.t -> Type.t -> t

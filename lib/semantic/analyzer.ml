@@ -33,9 +33,12 @@ let rec transExpr (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t =
       begin
         match Env.find_var env sym with
         | None ->
-          report_undef_var pos sym;
+          Errors.report pos "undefined variable: %s" (Symbol.name sym);
           Type.IntType
-        | Some ty -> Type.actual_type ty
+        | Some (FunEntry _) ->
+          Errors.report pos "function must be called: %s" (Symbol.name sym);
+          Type.IntType
+        | Some (VarEntry ty) -> Type.actual_type ty
       end
     | FieldVar (pos, var, sym) ->
       begin
@@ -75,10 +78,6 @@ let rec transExpr (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t =
         && not (Type.is_record ty) && not (Type.is_array ty) then
       Errors.report pos "expected int, string, nil, record or array type, got %s type"
         (Type.show ty)
-
-  (* report undefined variable *)
-  and report_undef_var pos sym =
-    Errors.report pos "undefined variable: %s" (Symbol.name sym)
 
   and trunary _pos _op ((rand_pos, _) as rand) =
     let rand_ty = trexpr rand in
@@ -174,11 +173,14 @@ let rec transExpr (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t =
 
   and trcall pos func args =
     let args' = List.map args ~f:(fun ((pos, _) as expr) -> (pos, trexpr expr)) in
-    match Env.find_fun env func with
+    match Env.find_var env func with
     | None ->
       Errors.report pos "undefined function: %s" (Symbol.name func);
       Type.IntType
-    | Some (params, ret) ->
+    | Some (VarEntry _) ->
+      Errors.report pos "cannot call non-function variable: %s" (Symbol.name func);
+      Type.IntType
+    | Some (FunEntry (params, ret)) ->
       begin
         if List.length params <> List.length args' then
           Errors.report pos "expected %d parameters, got %d arguments"
@@ -258,7 +260,7 @@ let rec transExpr (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t =
       Errors.report pos "expected int type for higher bound of for expression, got %s type"
         (Type.show high_ty);
 
-    let body_ty = transExpr true (Env.extend_var env var Type.IntType) body in
+    let body_ty = transExpr true (Env.extend_var env var (VarEntry Type.IntType)) body in
 
     if body_ty <> Type.IntType then
       Errors.report pos "expected unit type for body of for expression, got %s type"
@@ -310,7 +312,7 @@ let rec transExpr (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t =
         else
           init_ty
     in
-    Env.extend_var env name var_ty
+    Env.extend_var env name (VarEntry var_ty)
 
   and trtydecls env tydecls =
     let ty_names = List.map tydecls ~f:(fun d -> d.name) in
@@ -418,7 +420,9 @@ let rec transExpr (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t =
         (param_tys, ret_ty))
     in
     let fun_names = List.map fundecls ~f:(fun d -> d.name) in
-    let env' = List.fold2_exn fun_names fun_tys ~init:env ~f:Env.extend_fun in
+    let env' = List.fold2_exn fun_names fun_tys ~init:env
+      ~f:(fun env name ty -> Env.extend_var env name (FunEntry ty))
+    in
 
     (* check each function *)
     List.iter2_exn fundecls fun_tys ~f:(fun fundecl (param_tys, ret_ty) ->
@@ -426,7 +430,8 @@ let rec transExpr (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t =
 
       let param_names = List.map fundecl.params ~f:(fun p -> p.name) in
       let body_ty = transExpr false
-        (List.fold2_exn param_names param_tys ~init:env' ~f:Env.extend_var)
+        (List.fold2_exn param_names param_tys ~init:env'
+          ~f:(fun env name ty -> Env.extend_var env name (VarEntry ty)))
         fundecl.body
       in
       if not (Type.is_compatible ret_ty body_ty) then
