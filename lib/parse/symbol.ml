@@ -18,9 +18,11 @@ module T = struct
           Hashtbl.add_exn symbol_names ~key:i ~data:s;
           i)
 
-
     let name = Hashtbl.find_exn symbol_names
 
+    let (=) = (=)
+
+    let (<>) = (<>)
 
     module Format = Caml.Format
 

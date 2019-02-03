@@ -7,6 +7,10 @@ val sym : string -> t
 
 val name : t -> string
 
+val (=) : t -> t -> bool
+
+val (<>) : t -> t -> bool
+
 module Format = Caml.Format
 
 val pp : Format.formatter -> t -> unit
