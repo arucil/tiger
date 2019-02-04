@@ -69,7 +69,7 @@ rule get_token =
   | '&' { AND (get_pos lexbuf) }
   | '|' { OR (get_pos lexbuf) }
   | ":=" { ASSIGN (get_pos lexbuf) }
-  | "/*" { read_comment (get_pos lexbuf) 0 lexbuf }
+  | "/*" { read_comment [get_pos lexbuf] 0 lexbuf }
   | '"' { read_string (get_pos lexbuf) (Buffer.create 10) lexbuf }
   | _ as c
     {
@@ -82,16 +82,16 @@ and read_string start_pos buf =
   parse
   | '"' { STR (start_pos, Buffer.contents buf) }
   | '\\' { read_escape start_pos buf lexbuf }
-  | _ as c { Buffer.add_char buf c; read_string start_pos buf lexbuf }
   | '\n'
     {
       next_line lexbuf;
-      Errors.report (get_pos lexbuf) "unclosed string";
+      Errors.report start_pos "unclosed string";
       STR (start_pos, Buffer.contents buf)
     }
+  | _ as c { Buffer.add_char buf c; read_string start_pos buf lexbuf }
   | eof
     {
-      Errors.report (get_pos lexbuf) "unclosed string";
+      Errors.report start_pos "unclosed string";
       STR (start_pos, Buffer.contents buf)
     }
 
@@ -125,7 +125,7 @@ and read_escape start_pos buf =
     }
   | eof
     {
-      Errors.report (get_pos lexbuf) "unclosed string";
+      Errors.report start_pos "unclosed string";
       STR (start_pos, Buffer.contents buf)
     }
 
@@ -144,30 +144,30 @@ and read_linespan_escape start_pos buf =
     }
   | eof
     {
-      Errors.report (get_pos lexbuf) "unclosed string";
+      Errors.report start_pos "unclosed string";
       STR (start_pos, Buffer.contents buf)
     }
 
-and read_comment start_pos level =
+and read_comment start_poss level =
   parse
   | "*/"
     {
       if level = 0 then
         get_token lexbuf
       else
-        read_comment start_pos (level - 1) lexbuf
+        read_comment (List.tl_exn start_poss) (level - 1) lexbuf
     }
   | "/*"
     {
-      read_comment (get_pos lexbuf) (level + 1) lexbuf
+      read_comment (get_pos lexbuf :: start_poss) (level + 1) lexbuf
     }
   | '\n'
-    { next_line lexbuf; read_comment start_pos level lexbuf }
+    { next_line lexbuf; read_comment start_poss level lexbuf }
   | _
-    { read_comment start_pos level lexbuf }
+    { read_comment start_poss level lexbuf }
   | eof
     {
-      Errors.report start_pos "unclosed comment";
+      Errors.report (List.hd_exn start_poss) "unclosed comment";
       EOF (get_pos lexbuf)
     }
 
