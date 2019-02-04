@@ -3,8 +3,6 @@
   open Base
   open Token
 
-  exception Error of Errors.pos * string
-
   let get_pos lexbuf =
     let pos = lexbuf.lex_start_p in
     (pos.pos_lnum, pos.pos_cnum - pos.pos_bol + 1)
@@ -71,13 +69,12 @@ rule get_token =
   | '&' { AND (get_pos lexbuf) }
   | '|' { OR (get_pos lexbuf) }
   | ":=" { ASSIGN (get_pos lexbuf) }
-  | "/*" { read_comment 0 lexbuf }
+  | "/*" { read_comment (get_pos lexbuf) 0 lexbuf }
   | '"' { read_string (get_pos lexbuf) (Buffer.create 10) lexbuf }
   | _ as c
     {
-      raise (Error
-        (get_pos lexbuf,
-         Printf.sprintf "unexpected char: %c (%d)" c (Char.to_int c)))
+      Errors.report (get_pos lexbuf) "unexpected char: %c (%d)" c (Char.to_int c);
+      get_token lexbuf
     }
   | eof { EOF (get_pos lexbuf) }
 
@@ -89,11 +86,13 @@ and read_string start_pos buf =
   | '\n'
     {
       next_line lexbuf;
-      raise (Error (get_pos lexbuf, "unclosed string"))
+      Errors.report (get_pos lexbuf) "unclosed string";
+      STR (start_pos, Buffer.contents buf)
     }
   | eof
     {
-      raise (Error (get_pos lexbuf, "unclosed string"))
+      Errors.report (get_pos lexbuf) "unclosed string";
+      STR (start_pos, Buffer.contents buf)
     }
 
 and read_escape start_pos buf =
@@ -110,16 +109,25 @@ and read_escape start_pos buf =
           read_string start_pos buf lexbuf
         end
       else
-        raise (Error (get_pos lexbuf, "ASCII code out of range"))
+        begin
+          Errors.report (get_pos lexbuf) "ASCII code out ot range";
+          read_string start_pos buf lexbuf
+        end
     }
   | '\n'
     { next_line lexbuf; read_linespan_escape start_pos buf lexbuf }
   | ['\x00'-' ']
     { read_linespan_escape start_pos buf lexbuf }
   | _
-    { raise (Error (get_pos lexbuf, "invalid escape")) }
+    {
+      Errors.report (get_pos lexbuf) "invalid escape";
+      read_string start_pos buf lexbuf
+    }
   | eof
-    { raise (Error (get_pos lexbuf, "unclosed string")) }
+    {
+      Errors.report (get_pos lexbuf) "unclosed string";
+      STR (start_pos, Buffer.contents buf)
+    }
 
 and read_linespan_escape start_pos buf =
   parse
@@ -129,26 +137,37 @@ and read_linespan_escape start_pos buf =
     { next_line lexbuf; read_linespan_escape start_pos buf lexbuf }
   | ['\x00'-' ']
     { read_linespan_escape start_pos buf lexbuf }
-  | _ { raise (Error (get_pos lexbuf, "invalid escape")) }
-  | eof { raise (Error (get_pos lexbuf, "unclosed string")) }
+  | _
+    {
+      Errors.report (get_pos lexbuf) "invalid escape";
+      read_linespan_escape start_pos buf lexbuf
+    }
+  | eof
+    {
+      Errors.report (get_pos lexbuf) "unclosed string";
+      STR (start_pos, Buffer.contents buf)
+    }
 
-and read_comment level =
+and read_comment start_pos level =
   parse
   | "*/"
     {
       if level = 0 then
         get_token lexbuf
       else
-        read_comment (level - 1) lexbuf
+        read_comment start_pos (level - 1) lexbuf
     }
   | "/*"
     {
-      read_comment (level + 1) lexbuf
+      read_comment (get_pos lexbuf) (level + 1) lexbuf
     }
   | '\n'
-    { next_line lexbuf; read_comment level lexbuf }
+    { next_line lexbuf; read_comment start_pos level lexbuf }
   | _
-    { read_comment level lexbuf }
+    { read_comment start_pos level lexbuf }
   | eof
-    { raise (Error (get_pos lexbuf, "unclosed comment")) }
+    {
+      Errors.report start_pos "unclosed comment";
+      EOF (get_pos lexbuf)
+    }
 
