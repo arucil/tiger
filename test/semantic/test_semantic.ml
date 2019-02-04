@@ -590,6 +590,20 @@ Error at (7:3): duplicate type declaration: a
 Error at (7:3): cyclic aliases detected: b, d, c
 |});
 
+      "var decl shadowing" >:: (fun _ ->
+        assert_ok
+          {|
+let
+  var f := 20
+  var x := "s"
+  var x := 123
+  function f(x : int, y : string) = ()
+in
+  f(x, let var x := "ww" in x end)
+end
+          |}
+          Type.UnitType);
+
       "var decl errors" >:: (fun _ ->
         assert_error
           {|
@@ -609,6 +623,39 @@ Error at (6:3): variable declaration must specify type for nil initial value
 Error at (7:3): expected string type for variable initialization, got int type
 Error at (8:3): expected (array of int)#0 type for variable initialization, got (array of int)#1 type
 |});
+
+      "mutual recursive functions" >:: (fun _ ->
+        assert_ok
+          {|
+let
+  type integer = int
+  function even(x : integer) : int =
+    if x = 0 then 1 else odd(x - 1)
+  function odd(x : int) : integer =
+    if x = 0 then 0 else even(x - 1)
+in
+  even(odd(20))
+end
+          |}
+          Type.IntType);
+
+      "function decl errors" >:: (fun _ ->
+        assert_error
+          {|
+let
+  function foo(x : int) = ()
+  function foo(x : string) : int = 30
+  function bar(x : int, x : string) : int = nil
+in
+  foo(20)
+end
+          |}
+          {|
+Error at (4:3): duplicate function declaration: foo
+Error at (5:25): duplicate paramater: x
+Error at (5:3): expected int type for function body, got nil type
+Error at (7:7): expected string type for argument 1, got int type
+|})
     ]
   ]
 
