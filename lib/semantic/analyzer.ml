@@ -374,7 +374,7 @@ let rec transExpr (new_unique : unit -> Type.unique) (in_loop : bool) (env : Env
               if not (List.exists cyclic_names
                 ~f:(fun name -> List.mem ignored_ty_names name ~equal:Symbol.(=)))
                 then
-                Errors.report ty_pos "cyclic aliases detected: %s"
+                Errors.report ty_pos "type alias cycle detected: %s"
                   (List.map cyclic_names ~f:Symbol.name |> String.concat ~sep:", ");
               cyclic_names
             end

@@ -587,7 +587,7 @@ end
           {|
 Error at (3:23): duplicate field: a
 Error at (7:3): duplicate type declaration: a
-Error at (7:3): cyclic aliases detected: b, d, c
+Error at (7:3): type alias cycle detected: b, d, c
 |});
 
       "var decl shadowing" >:: (fun _ ->
