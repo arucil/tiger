@@ -1,11 +1,8 @@
 
-open Lex.Token
-
-
 type symbol = Symbol.t
   [@@deriving show]
 
-type expr = token_pos * expr'
+type expr = Errors.pos * expr'
   [@@deriving show]
 
 and expr' =
@@ -16,7 +13,7 @@ and expr' =
   | CallExpr of { func : symbol; args: expr list }
   | BinaryExpr of { lhs : expr; op : op; rhs : expr }
   | UnaryExpr of { op : uop; rand : expr }
-  | RecordExpr of { ty : symbol; fields : (token_pos * symbol * expr) list; }
+  | RecordExpr of { ty : symbol; fields : (Errors.pos * symbol * expr) list; }
   | ArrayExpr of { ty : symbol; size : expr; init : expr }
   | SeqExpr of expr list
   | AssignExpr of { var : var; expr : expr }
@@ -28,9 +25,9 @@ and expr' =
   [@@deriving show]
 
 and var =
-  | SimpleVar of token_pos * symbol
-  | FieldVar of token_pos * var * symbol
-  | IndexVar of token_pos * var * expr
+  | SimpleVar of Errors.pos * symbol
+  | FieldVar of Errors.pos * var * symbol
+  | IndexVar of Errors.pos * var * expr
   [@@deriving show]
 
 and op =
@@ -45,28 +42,28 @@ and uop =
 
 and decl =
   | FunDecl of fundecl list
-  | VarDecl of { name : symbol; mutable escape : bool; ty : (token_pos * symbol) option; init : expr; pos : token_pos }
+  | VarDecl of { name : symbol; mutable escape : bool; ty : (Errors.pos * symbol) option; init : expr; pos : Errors.pos }
   | TypeDecl of typedecl list
   [@@deriving show]
 
 and fundecl =
-  { name : symbol; params : param list; ret : (token_pos * symbol) option; body : expr; pos : token_pos }
+  { name : symbol; params : param list; ret : (Errors.pos * symbol) option; body : expr; pos : Errors.pos }
   [@@deriving show]
 
 and param =
-  { name : symbol; mutable escape : bool; ty : symbol; pos : token_pos }
+  { name : symbol; mutable escape : bool; ty : symbol; pos : Errors.pos }
   [@@deriving show]
 
 and typedecl =
-  { name : symbol; ty : ty; pos : token_pos }
+  { name : symbol; ty : ty; pos : Errors.pos }
   [@@deriving show]
 
 and ty =
-  | AliasType of (token_pos * symbol)
+  | AliasType of (Errors.pos * symbol)
   | RecordType of field list
-  | ArrayType of (token_pos * symbol)
+  | ArrayType of (Errors.pos * symbol)
   [@@deriving show]
 
 and field =
-  { name : symbol; ty : symbol; pos : token_pos }
+  { name : symbol; ty : symbol; pos : Errors.pos }
   [@@deriving show]

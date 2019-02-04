@@ -4,5 +4,5 @@
 
 (library
   (name lex)
-  (libraries base)
+  (libraries base errors)
   (preprocess (pps ppx_deriving.std)))

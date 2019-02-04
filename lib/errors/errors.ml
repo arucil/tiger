@@ -1,5 +1,13 @@
 open Base
 
+module Format = Caml.Format
+
+type col_num = int [@@deriving show]
+
+type line_num = int [@@deriving show]
+
+type pos = line_num * col_num [@@deriving show]
+
 let oc = ref Stdio.stderr
 
 let erroneous = ref false

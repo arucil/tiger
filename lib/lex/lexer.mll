@@ -3,7 +3,7 @@
   open Base
   open Token
 
-  exception Error of token_pos * string
+  exception Error of Errors.pos * string
 
   let get_pos lexbuf =
     let pos = lexbuf.lex_start_p in

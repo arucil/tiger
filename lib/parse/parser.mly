@@ -29,13 +29,13 @@ let rec merge_decl_group : Ast.decl list -> Ast.decl list = function
 
 %}
 
-%token <token_pos> WHILE FOR TO BREAK LET IN END FUNCTION VAR TYPE ARRAY IF THEN
-%token <token_pos> ELSE DO OF NIL
-%token <token_pos> COMMA COLON SEMI LPAREN RPAREN LBRACK RBRACK LBRACE RBRACE
-%token <token_pos> PLUS MINUS TIMES DIV EQ NEQ GT GE LT LE AND OR DOT ASSIGN
-%token <token_pos> EOF
-%token <token_pos * string> ID STR
-%token <token_pos * int> INT
+%token <Errors.pos> WHILE FOR TO BREAK LET IN END FUNCTION VAR TYPE ARRAY IF THEN
+%token <Errors.pos> ELSE DO OF NIL
+%token <Errors.pos> COMMA COLON SEMI LPAREN RPAREN LBRACK RBRACK LBRACE RBRACE
+%token <Errors.pos> PLUS MINUS TIMES DIV EQ NEQ GT GE LT LE AND OR DOT ASSIGN
+%token <Errors.pos> EOF
+%token <Errors.pos * string> ID STR
+%token <Errors.pos * int> INT
 
 %nonassoc DO
 %nonassoc IFX
@@ -51,8 +51,8 @@ let rec merge_decl_group : Ast.decl list -> Ast.decl list = function
 
 %type <Ast.expr> prog expr
 %type <Ast.var> lvalue
-%type <(token_pos * string, token_pos * Ast.expr) either> lvalue_suffix
-%type <token_pos * Symbol.t * Ast.expr> field
+%type <(Errors.pos * string, Errors.pos * Ast.expr) either> lvalue_suffix
+%type <Errors.pos * Symbol.t * Ast.expr> field
 %type <Ast.ty> ty
 %type <Ast.decl> decl fun_decl type_decl var_decl
 %type <Ast.field list> fields

@@ -1,7 +1,14 @@
 open Base
-open Lex
 
-val report : Token.token_pos -> ('a, Stdio.Out_channel.t, unit) format -> 'a
+module Format = Caml.Format
+
+type col_num = int [@@deriving show]
+
+type line_num = int [@@deriving show]
+
+type pos = line_num * col_num [@@deriving show]
+
+val report : pos -> ('a, Stdio.Out_channel.t, unit) format -> 'a
 
 val set_out : Stdio.Out_channel.t -> unit
 

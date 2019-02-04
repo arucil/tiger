@@ -1,5 +1,5 @@
 
-exception Error of Token.token_pos * string
+exception Error of Errors.pos * string
 
 
 open Token
