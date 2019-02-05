@@ -61,7 +61,7 @@ errors:
 
 let test_semantic =
   let dummy_unique = Type.new_unique (Type.new_unique_store ()) in
-  "Test Semantic Analyzer" >::: [
+  "Test Typechecker" >::: [
 
     "value" >::: [
       "nil" >:: (fun _ ->
