@@ -2,7 +2,7 @@
 
 [![CircleCI](https://circleci.com/gh/arucil/tiger.svg?style=svg)](https://circleci.com/gh/arucil/tiger)
 
-Tiger is a compiler for the Tiger language described in *Modern Compiler Implementation in ML*.
+This project is a compiler for the Tiger language described in *Modern Compiler Implementation in ML*.
 
 # Building
 
