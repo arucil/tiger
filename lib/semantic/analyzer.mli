@@ -1,3 +1,3 @@
 open Parse.Ast
 
-val transProg : expr -> Type.t
+val transProg : (module Frame.S) -> expr -> Type.t

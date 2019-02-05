@@ -1,12 +1,12 @@
 
-let rec iter2 f xs ys =
+let rec iter2 xs ys ~f =
   match xs, ys with
   | (x :: xs'), (y :: ys') ->
     f x y;
-    iter2 f xs' ys'
+    iter2 xs' ys' ~f
   | _ -> ()
 
-let iter2i f xs ys =
+let iter2i xs ys ~f =
   let rec go i xs ys =
     match xs, ys with
     | (x :: xs'), (y :: ys') ->
@@ -15,13 +15,20 @@ let iter2i f xs ys =
     | _ -> ()
   in go 0 xs ys
 
-let rec update f x' = function
+let rec update xs x' ~pred =
+  match xs with
   | [] -> []
   | x :: xs ->
-    if f x then x' :: update f x' xs
-    else x :: update f x' xs
+    if pred x then x' :: update xs x' ~pred
+    else x :: update xs x' ~pred
 
-let rec fold_right2 f z xs ys =
+let rec fold_right2 xs ys ~init ~f =
   match xs, ys with
-  | (x :: xs'), (y :: ys') -> fold_right2 f z xs' ys' |> f x y
-  | _ -> z
+  | (x :: xs'), (y :: ys') -> fold_right2 xs' ys' ~init ~f |> f x y
+  | _ -> init
+
+let rec fold3 xs ys zs ~init ~f =
+  match xs, ys, zs with
+  | (x :: xs'), (y :: ys'), (z :: zs') ->
+    fold3 xs' ys' zs' ~init:(f init x y z) ~f
+  | _ -> init

@@ -11,7 +11,7 @@ let run_analyzer s =
   let oc = Out_channel.create ~append:false temp_file in
   Errors.set_out oc;
   let expr = Parser.prog Lexer.get_token (Lexing.from_string s) in
-  let ty = Analyzer.transProg expr in
+  let ty = Analyzer.transProg (module Dummy_frame) expr in
   Out_channel.close oc;
   let errors = In_channel.read_all temp_file in
   (ty, errors)
