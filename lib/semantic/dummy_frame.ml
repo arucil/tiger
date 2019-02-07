@@ -19,6 +19,12 @@ let new_frame label params temp_store =
   {
     label;
     params = List.map params
+    (**
+    TODO:
+    params根据escape指定reg或stack,
+    要生成view shift用的指令，把caller的参数(前k个用reg,其他用stack)
+    转移到param所用的reg或stack
+    *)
       ~f:(fun escape ->
         if escape then InFrame 0
         else InReg (Temp.new_temp temp_store))
