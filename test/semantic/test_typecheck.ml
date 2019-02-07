@@ -10,6 +10,7 @@ let run_analyzer s =
   let temp_file = Caml.Filename.temp_file "tiger_semantic_" "" in
   let oc = Out_channel.create ~append:false temp_file in
   Errors.set_out oc;
+  Errors.set_source_name "-";
   let expr = Parser.prog Lexer.get_token (Lexing.from_string s) in
   let ty = Analyzer.transProg (module Dummy_frame) expr in
   Out_channel.close oc;
@@ -105,8 +106,8 @@ let test_semantic =
         assert_error
           {|(-"abc"; -())|}
           {|
-Error at (1:3): expected int type for operand of negation, got string type
-Error at (1:11): expected int type for operand of negation, got unit type
+-:1:3: error: expected int type for operand of negation, got string type
+-:1:11: error: expected int type for operand of negation, got unit type
 |});
     ];
 
@@ -120,8 +121,8 @@ Error at (1:11): expected int type for operand of negation, got unit type
         assert_error
           {|(3+()-("a"*20)/80)|}
           {|
-Error at (1:4): expected int type for right-hand side of '+', got unit type
-Error at (1:8): expected int type for left-hand side of '*', got string type
+-:1:4: error: expected int type for right-hand side of '+', got unit type
+-:1:8: error: expected int type for left-hand side of '*', got string type
 |});
 
       "comparison" >::: [
@@ -177,16 +178,16 @@ in
 end
           |}
           {|
-Error at (14:5): incompatible operand types for '='
-Error at (15:3): expected int, string, record or array type for left-hand side of '=', got unit type
-Error at (15:8): expected int, string, record or array type for right-hand side of '=', got unit type
-Error at (16:3): expected int or string type for left-hand side of '>', got (array of int)#0 type
-Error at (16:8): expected int or string type for right-hand side of '>', got (array of int)#0 type
-Error at (17:6): incompatible operand types for '='
-Error at (18:16): incompatible operand types for '<>'
-Error at (19:6): incompatible operand types for '='
-Error at (20:11): incompatible operand types for '='
-Error at (21:7): cannot determine the types of the operands
+-:14:5: error: incompatible operand types for '='
+-:15:3: error: expected int, string, record or array type for left-hand side of '=', got unit type
+-:15:8: error: expected int, string, record or array type for right-hand side of '=', got unit type
+-:16:3: error: expected int or string type for left-hand side of '>', got (array of int)#0 type
+-:16:8: error: expected int or string type for right-hand side of '>', got (array of int)#0 type
+-:17:6: error: incompatible operand types for '='
+-:18:16: error: incompatible operand types for '<>'
+-:19:6: error: incompatible operand types for '='
+-:20:11: error: incompatible operand types for '='
+-:21:7: error: cannot determine the types of the operands
 |});
 
       "and/or" >:: (fun _ ->
@@ -198,9 +199,9 @@ Error at (21:7): cannot determine the types of the operands
         assert_error
           {|let type a = array of int in "a" & () | a[0] of 1 end|}
           {|
-Error at (1:30): expected int type for left-hand side of '&', got string type
-Error at (1:36): expected int type for right-hand side of '&', got unit type
-Error at (1:41): expected int type for right-hand side of '|', got (array of int)#0 type
+-:1:30: error: expected int type for left-hand side of '&', got string type
+-:1:36: error: expected int type for right-hand side of '&', got unit type
+-:1:41: error: expected int type for right-hand side of '|', got (array of int)#0 type
 |});
     ];
 
@@ -216,8 +217,8 @@ Error at (1:41): expected int type for right-hand side of '|', got (array of int
 let function b() = () in b end)
 |}
         {|
-Error at (2:2): undefined variable: a
-Error at (3:26): cannot use function as variable: b
+-:2:2: error: undefined variable: a
+-:3:26: error: cannot use function as variable: b
 |});
 
     "index" >:: (fun _ ->
@@ -239,11 +240,11 @@ r[()]
 end
 |}
         {|
-Error at (7:1): undefined variable: a
-Error at (7:2): cannot index on int type
-Error at (8:3): expected int type for index, got string type
-Error at (8:2): cannot index on int type
-Error at (9:3): expected int type for index, got unit type
+-:7:1: error: undefined variable: a
+-:7:2: error: cannot index on int type
+-:8:3: error: expected int type for index, got string type
+-:8:2: error: cannot index on int type
+-:9:3: error: expected int type for index, got unit type
 |});
 
     "field selection" >:: (fun _ ->
@@ -273,10 +274,10 @@ in
 end
         |}
         {|
-Error at (7:3): undefined variable: a
-Error at (7:5): expected record type for field selection, got int type
-Error at (8:5): expected record type for field selection, got unit type
-Error at (9:5): record { bar : string, fo : int }#0 type has no field named foo
+-:7:3: error: undefined variable: a
+-:7:5: error: expected record type for field selection, got int type
+-:8:5: error: expected record type for field selection, got unit type
+-:9:5: error: record { bar : string, fo : int }#0 type has no field named foo
 |});
 
     "index and field selection" >:: (fun _ ->
@@ -346,10 +347,10 @@ in
 end
           |}
           {|
-Error at (8:3): undefined variable: a
-Error at (9:8): expected int type for right-hand side of assignment, got string type
-Error at (10:8): expected record { foo : int }#0 type for right-hand side of assignment, got record { foo : int }#1 type
-Error at (11:22): variable cannot be assigned to: i
+-:8:3: error: undefined variable: a
+-:9:8: error: expected int type for right-hand side of assignment, got string type
+-:10:8: error: expected record { foo : int }#0 type for right-hand side of assignment, got record { foo : int }#1 type
+-:11:22: error: variable cannot be assigned to: i
 |})
     ];
 
@@ -388,14 +389,14 @@ in
 end
         |}
         {|
-Error at (4:12): expected 3 fields, got 0 fields
-Error at (6:3): undefined record type: r
-Error at (7:3): expected record type for record creation, got int type
-Error at (8:3): expected 3 fields, got 1 fields
-Error at (8:9): expected field 'foo' of int type, got field 'foo' of unit type
-Error at (9:9): expected field 'foo' of int type, got field 'foo' of string type
-Error at (10:16): expected field 'bar' of string type, got field 'baz' of nil type
-Error at (10:25): expected field 'baz' of record { foo : int, bar : string, baz : alias 'rec' }#0 type, got field 'bar' of string type
+-:4:12: error: expected 3 fields, got 0 fields
+-:6:3: error: undefined record type: r
+-:7:3: error: expected record type for record creation, got int type
+-:8:3: error: expected 3 fields, got 1 fields
+-:8:9: error: expected field 'foo' of int type, got field 'foo' of unit type
+-:9:9: error: expected field 'foo' of int type, got field 'foo' of string type
+-:10:16: error: expected field 'bar' of string type, got field 'baz' of nil type
+-:10:25: error: expected field 'baz' of record { foo : int, bar : string, baz : alias 'rec' }#0 type, got field 'bar' of string type
 |});
 
     "array creation" >:: (fun _ ->
@@ -424,10 +425,10 @@ in
 end
         |}
         {|
-Error at (4:13): undefined array type: z
-Error at (5:13): expected int type for initial value of array, got string type
-Error at (7:6): expected int type for array size, got unit type
-Error at (8:3): expected array type for array creation, got int type
+-:4:13: error: undefined array type: z
+-:5:13: error: expected int type for initial value of array, got string type
+-:7:6: error: expected int type for array size, got unit type
+-:8:3: error: expected array type for array creation, got int type
 |});
 
     "if" >::: [
@@ -449,9 +450,9 @@ Error at (8:3): expected array type for array creation, got int type
  if 0 then 20)
         |}
         {|
-Error at (2:2): expected int type for condition of if expression, got string type
-Error at (2:2): incompatible branch types for if expression
-Error at (3:2): incompatible branch types for if expression
+-:2:2: error: expected int type for condition of if expression, got string type
+-:2:2: error: incompatible branch types for if expression
+-:3:2: error: incompatible branch types for if expression
 |});
 
     "function call" >:: (fun _ ->
@@ -479,10 +480,10 @@ in
 end
         |}
         {|
-Error at (8:17): cannot call non-function variable: f
-Error at (8:13): expected 1 parameters, got 2 arguments
-Error at (8:30): expected record { bar : int }#0 type for argument 1, got record { bar : int }#1 type
-Error at (8:49): undefined function: bar
+-:8:17: error: cannot call non-function variable: f
+-:8:13: error: expected 1 parameters, got 2 arguments
+-:8:30: error: expected record { bar : int }#0 type for argument 1, got record { bar : int }#1 type
+-:8:49: error: undefined function: bar
 |});
 
     "while loop" >:: (fun _ ->
@@ -494,8 +495,8 @@ Error at (8:49): undefined function: bar
       assert_error
         {|while "a" do 30|}
         {|
-Error at (1:1): expected int type for condition of while loop, got string type
-Error at (1:1): expected unit type for body of while loop, got int type
+-:1:1: error: expected int type for condition of while loop, got string type
+-:1:1: error: expected unit type for body of while loop, got int type
 |});
 
     "for loop" >:: (fun _ ->
@@ -507,9 +508,9 @@ Error at (1:1): expected unit type for body of while loop, got int type
       assert_error
         {|for abc := "" to () do 328|}
         {|
-Error at (1:1): expected int type for lower bound of for loop, got string type
-Error at (1:1): expected int type for higher bound of for loop, got unit type
-Error at (1:1): expected unit type for body of for loop, got int type
+-:1:1: error: expected int type for lower bound of for loop, got string type
+-:1:1: error: expected int type for higher bound of for loop, got unit type
+-:1:1: error: expected unit type for body of for loop, got int type
 |});
 
     "break in while loop" >:: (fun _ ->
@@ -556,8 +557,8 @@ end;
 break)
         |}
         {|
-Error at (3:20): break expression must be inside loop
-Error at (6:1): break expression must be inside loop
+-:3:20: error: break expression must be inside loop
+-:6:1: error: break expression must be inside loop
 |});
 
     "let" >::: [
@@ -585,9 +586,9 @@ in
 end
           |}
           {|
-Error at (3:23): duplicate field: a
-Error at (7:3): duplicate type declaration: a
-Error at (7:3): type alias cycle detected: b, d, c
+-:3:23: error: duplicate field: a
+-:7:3: error: duplicate type declaration: a
+-:7:3: error: type alias cycle detected: b, d, c
 |});
 
       "var decl shadowing" >:: (fun _ ->
@@ -618,10 +619,10 @@ in
 end
           |}
           {|
-Error at (5:11): undefined type: integer
-Error at (6:3): variable declaration must specify type for nil initial value
-Error at (7:3): expected string type for variable initialization, got int type
-Error at (8:3): expected (array of int)#0 type for variable initialization, got (array of int)#1 type
+-:5:11: error: undefined type: integer
+-:6:3: error: variable declaration must specify type for nil initial value
+-:7:3: error: expected string type for variable initialization, got int type
+-:8:3: error: expected (array of int)#0 type for variable initialization, got (array of int)#1 type
 |});
 
       "mutual recursive functions" >:: (fun _ ->
@@ -651,10 +652,10 @@ in
 end
           |}
           {|
-Error at (4:3): duplicate function declaration: foo
-Error at (5:25): duplicate paramater: x
-Error at (5:3): expected int type for function body, got nil type
-Error at (7:7): expected string type for argument 1, got int type
+-:4:3: error: duplicate function declaration: foo
+-:5:25: error: duplicate paramater: x
+-:5:3: error: expected int type for function body, got nil type
+-:7:7: error: expected string type for argument 1, got int type
 |})
     ]
   ]

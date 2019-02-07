@@ -9,6 +9,7 @@ let run_lexer s =
   let temp_file = Caml.Filename.temp_file "tiger_lex_" "" in
   let oc = Out_channel.create ~append:false temp_file in
   Errors.set_out oc;
+  Errors.set_source_name "-";
   let lexbuf = Lexing.from_string s in
   let rec go () =
     match Lexer.get_token lexbuf with
@@ -240,10 +241,10 @@ end
           [(Token.STR ((1, 1), "abc")); (Token.STR ((2, 1), "opqy"));
           (Token.STR ((2, 14), "xyz")); (Token.EOF (2, 18))]
           {|
-Error at (1:1): unclosed string
-Error at (2:6): ASCII code out ot range
-Error at (2:10): invalid escape
-Error at (2:14): unclosed string
+-:1:1: error: unclosed string
+-:2:6: error: ASCII code out ot range
+-:2:10: error: invalid escape
+-:2:14: error: unclosed string
 |});
 
       "string 2" >:: (fun _ ->
@@ -251,7 +252,7 @@ Error at (2:14): unclosed string
           {|"abc\|}
           [(Token.STR ((1, 1), "abc")); (Token.EOF (1, 6))]
           {|
-Error at (1:1): unclosed string
+-:1:1: error: unclosed string
 |});
 
       "comment" >:: (fun _ ->
@@ -259,7 +260,7 @@ Error at (1:1): unclosed string
           {|/*  /*  /*abc*/|}
           [Token.EOF (1, 16)]
           {|
-Error at (1:5): unclosed comment
+-:1:5: error: unclosed comment
 |})
     ];
   ]

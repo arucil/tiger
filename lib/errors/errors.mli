@@ -14,4 +14,6 @@ val set_out : Stdio.Out_channel.t -> unit
 
 val out : unit -> Stdio.Out_channel.t
 
+val set_source_name : string -> unit
+
 val has_errors : unit -> bool
