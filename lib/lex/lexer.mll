@@ -6,14 +6,6 @@
   let get_pos lexbuf =
     let pos = lexbuf.lex_start_p in
     (pos.pos_lnum, pos.pos_cnum - pos.pos_bol + 1)
-
-  let next_line lexbuf =
-    let pos = lexbuf.lex_curr_p in
-    lexbuf.lex_curr_p <-
-      { pos with
-        pos_bol = lexbuf.lex_curr_pos;
-        pos_lnum = pos.pos_lnum + 1
-      }
 }
 
 let digit = ['0'-'9']
@@ -24,7 +16,7 @@ let whitespace = [' ' '\t' '\r']+
 rule get_token =
   parse
   | whitespace { get_token lexbuf }
-  | '\n' { next_line lexbuf; get_token lexbuf }
+  | '\n' { Lexing.new_line lexbuf; get_token lexbuf }
   | "while" { WHILE (get_pos lexbuf)}
   | "for" { FOR (get_pos lexbuf) }
   | "to" { TO (get_pos lexbuf) }
@@ -84,7 +76,7 @@ and read_string start_pos buf =
   | '\\' { read_escape start_pos buf lexbuf }
   | '\n'
     {
-      next_line lexbuf;
+      Lexing.new_line lexbuf;
       Errors.report start_pos "unclosed string";
       STR (start_pos, Buffer.contents buf)
     }
@@ -115,7 +107,7 @@ and read_escape start_pos buf =
         end
     }
   | '\n'
-    { next_line lexbuf; read_linespan_escape start_pos buf lexbuf }
+    { Lexing.new_line lexbuf; read_linespan_escape start_pos buf lexbuf }
   | ['\x00'-' ']
     { read_linespan_escape start_pos buf lexbuf }
   | _
@@ -134,7 +126,7 @@ and read_linespan_escape start_pos buf =
   | '\\'
     { read_string start_pos buf lexbuf }
   | '\n'
-    { next_line lexbuf; read_linespan_escape start_pos buf lexbuf }
+    { Lexing.new_line lexbuf; read_linespan_escape start_pos buf lexbuf }
   | ['\x00'-' ']
     { read_linespan_escape start_pos buf lexbuf }
   | _
@@ -162,7 +154,7 @@ and read_comment start_poss level =
       read_comment (get_pos lexbuf :: start_poss) (level + 1) lexbuf
     }
   | '\n'
-    { next_line lexbuf; read_comment start_poss level lexbuf }
+    { Lexing.new_line lexbuf; read_comment start_poss level lexbuf }
   | _
     { read_comment start_poss level lexbuf }
   | eof
