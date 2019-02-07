@@ -330,7 +330,7 @@ let test_parse =
       assert_ok
         {|for foo := 1 + 2 to 3 * 2 do bar(foo)|}
         ((1, 1),
-        Ast.ForExpr {var = Symbol.sym "foo"; escape = true;
+        Ast.ForExpr {var = Symbol.sym "foo"; escape = ref true;
           low =
           ((1, 14),
             Ast.BinaryExpr {lhs = ((1, 12), (Ast.IntExpr 1)); op = Ast.AddOp;
@@ -427,7 +427,7 @@ let test_parse =
         ((1, 1),
         Ast.LetExpr {
           decls =
-          [Ast.VarDecl {name = Symbol.sym "foo"; escape = true; ty = None;
+          [Ast.VarDecl {name = Symbol.sym "foo"; escape = ref true; ty = None;
               init =
               ((1, 18),
               Ast.BinaryExpr {lhs = ((1, 16), (Ast.IntExpr 2)); op = Ast.AddOp;
@@ -443,7 +443,7 @@ let test_parse =
         ((1, 1),
         Ast.LetExpr {
           decls =
-          [Ast.VarDecl {name = Symbol.sym "foo"; escape = true;
+          [Ast.VarDecl {name = Symbol.sym "foo"; escape = ref true;
               ty = (Some ((1, 15), Symbol.sym "string"));
               init =
               ((1, 25),
@@ -468,9 +468,9 @@ let test_parse =
                   pos = (1, 5) };
                 { Ast.name = Symbol.sym "bar";
                   params =
-                  [{ Ast.name = Symbol.sym "x"; escape = true; ty = Symbol.sym "int"; pos = (1, 41)
+                  [{ Ast.name = Symbol.sym "x"; escape = ref true; ty = Symbol.sym "int"; pos = (1, 41)
                       };
-                    { Ast.name = Symbol.sym "y"; escape = true; ty = Symbol.sym "string";
+                    { Ast.name = Symbol.sym "y"; escape = ref true; ty = Symbol.sym "string";
                       pos = (1, 50) }
                     ];
                   ret = None;
@@ -497,7 +497,7 @@ let test_parse =
                   body = ((1, 30), (Ast.StrExpr "hh")); pos = (1, 5) };
                 { Ast.name = Symbol.sym "bar";
                   params =
-                  [{ Ast.name = Symbol.sym "xx"; escape = true; ty = Symbol.sym "int"; pos = (1, 48)
+                  [{ Ast.name = Symbol.sym "xx"; escape = ref true; ty = Symbol.sym "int"; pos = (1, 48)
                       }
                     ];
                   ret = (Some ((1, 58), Symbol.sym "int"));
@@ -537,7 +537,7 @@ end
      (Ast.FunDecl
         [{ Ast.name = Symbol.sym "even";
            params =
-           [{ Ast.name = Symbol.sym "x"; escape = true; ty = Symbol.sym "int"; pos = (5, 17)
+           [{ Ast.name = Symbol.sym "x"; escape = ref true; ty = Symbol.sym "int"; pos = (5, 17)
               }
              ];
            ret = None;
@@ -565,7 +565,7 @@ end
            pos = (5, 3) };
           { Ast.name = Symbol.sym "odd";
             params =
-            [{ Ast.name = Symbol.sym "x"; escape = true; ty = Symbol.sym "int"; pos = (6, 16)
+            [{ Ast.name = Symbol.sym "x"; escape = ref true; ty = Symbol.sym "int"; pos = (6, 16)
                }
               ];
             ret = (Some ((6, 25), Symbol.sym "int"));
@@ -592,12 +592,12 @@ end
                           ]}))});
             pos = (6, 3) }
           ]);
-     Ast.VarDecl {name = Symbol.sym "abc"; escape = true; ty = None;
+     Ast.VarDecl {name = Symbol.sym "abc"; escape = ref true; ty = None;
        init =
        ((7, 14),
         Ast.CallExpr {func = Symbol.sym "foo"; args = [((7, 18), (Ast.IntExpr 30))]});
        pos = (7, 3)};
-     Ast.VarDecl {name = Symbol.sym "zoo"; escape = true;
+     Ast.VarDecl {name = Symbol.sym "zoo"; escape = ref true;
        ty = (Some ((8, 13), Symbol.sym "string"));
        init = ((8, 23), (Ast.StrExpr "hey")); pos = (8, 3)}
      ];

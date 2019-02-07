@@ -19,7 +19,7 @@ and expr' =
   | AssignExpr of { var : var; expr : expr }
   | IfExpr of { cond : expr; conseq : expr; alt : expr option }
   | WhileExpr of { cond : expr; body : expr }
-  | ForExpr of { var : symbol; mutable escape : bool; low : expr; high : expr; body : expr }
+  | ForExpr of { var : symbol; escape : bool ref; low : expr; high : expr; body : expr }
   | BreakExpr
   | LetExpr of { decls : decl list; body : expr }
   [@@deriving show]
@@ -42,7 +42,7 @@ and uop =
 
 and decl =
   | FunDecl of fundecl list
-  | VarDecl of { name : symbol; mutable escape : bool; ty : (Errors.pos * symbol) option; init : expr; pos : Errors.pos }
+  | VarDecl of { name : symbol; escape : bool ref; ty : (Errors.pos * symbol) option; init : expr; pos : Errors.pos }
   | TypeDecl of typedecl list
   [@@deriving show]
 
@@ -51,7 +51,7 @@ and fundecl =
   [@@deriving show]
 
 and param =
-  { name : symbol; mutable escape : bool; ty : symbol; pos : Errors.pos }
+  { name : symbol; escape : bool ref; ty : symbol; pos : Errors.pos }
   [@@deriving show]
 
 and typedecl =
