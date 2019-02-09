@@ -3,6 +3,8 @@ module type S = sig
   type level
   type access
 
+  type ir
+
   val outermost : level
 
   val new_level : level -> Temp.label -> bool list -> Temp.temp_store -> level

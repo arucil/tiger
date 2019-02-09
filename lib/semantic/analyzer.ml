@@ -440,7 +440,8 @@ let transProg' (module Translate : Translate.S) (expr : Ast.expr) =
 
     (* perform semantic analysis on consecutive function declarations *)
     and trfundecls env fundecls =
-      let funs = List.map fundecls ~f:(fun d ->
+      let labels = Temp.new_labels (List.length fundecls) temp_store in
+      let funs = List.map2_exn labels fundecls ~f:(fun label d ->
         let param_tys = List.map d.params
           ~f:(fun p -> Type.actual_type (sym_type env p.pos p.ty))
         in
@@ -450,16 +451,15 @@ let transProg' (module Translate : Translate.S) (expr : Ast.expr) =
           | Some (ret_pos, ret_sym) ->
             Type.actual_type (sym_type env ret_pos ret_sym)
         in
-        let label = Temp.new_label temp_store in
         let escapes = List.map d.params ~f:(fun p -> !(p.escape)) in
         (Translate.new_level level label escapes temp_store, param_tys, ret_ty))
       in
       let fun_names = List.map fundecls ~f:(fun d -> d.name) in
-      let env' = List.fold2_exn fun_names funs ~init:env
-        ~f:(fun env name (level, params, ret) -> Env.extend_var env name
+      let env' = Utils.List.fold3 labels fun_names funs ~init:env
+        ~f:(fun env label name (level, params, ret) -> Env.extend_var env name
           (FunEntry
             {
-              label = Temp.new_label temp_store;
+              label;
               level;
               params;
               ret;

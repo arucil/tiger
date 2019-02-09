@@ -19,4 +19,7 @@ let new_label store =
   Int.incr store;
   Symbol.sym ("L" ^ Int.to_string i)
 
+let new_labels n store =
+  List.init n ~f:(fun _ -> new_label store)
+
 let named_label label = Symbol.sym label
