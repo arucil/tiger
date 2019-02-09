@@ -28,7 +28,7 @@ let transProg' (module Translate : Translate.S) (expr : Ast.expr) =
       | CallExpr { func; args } -> trcall pos func args
       | IfExpr { cond; conseq; alt } -> trif pos cond conseq alt
       | WhileExpr { cond; body } -> trwhile pos cond body
-      | ForExpr { var; low; high; body; _ } -> trfor pos var low high body
+      | ForExpr { var; low; high; body; escape } -> trfor pos var !escape low high body
       | BreakExpr -> trbreak pos
       | LetExpr { decls; body } -> trlet pos decls body
 
@@ -277,14 +277,14 @@ let transProg' (module Translate : Translate.S) (expr : Ast.expr) =
           (Type.show body_ty);
       Type.UnitType
 
-    and trfor pos var low high body =
+    and trfor pos var escape low high body =
       let low_ty = trexpr low in
       let high_ty = trexpr high in
 
       check_int pos low_ty "lower bound of for loop";
       check_int pos high_ty "higher bound of for loop";
 
-      let access = Translate.new_local level true(*TODO*) temp_store in
+      let access = Translate.new_local level escape temp_store in
 
       let body_ty = transExpr level true (Env.extend_var env var
         (VarEntry { access; ty = Type.IntType; assignable = false })) body
@@ -308,11 +308,11 @@ let transProg' (module Translate : Translate.S) (expr : Ast.expr) =
       List.fold decls ~init:env ~f:trdecl
 
     and trdecl env = function
-      | VarDecl { name; ty; init; pos; _ } -> trvardecl env name ty init pos
+      | VarDecl { name; ty; init; pos; escape } -> trvardecl env name ty init !escape pos
       | TypeDecl tydecls -> trtydecls env tydecls
       | FunDecl fundecls -> trfundecls env fundecls
 
-    and trvardecl env name ty init pos =
+    and trvardecl env name ty init escape pos =
       let init_ty = transExpr level in_loop env init in
       let var_ty =
         match ty with
@@ -341,7 +341,7 @@ let transProg' (module Translate : Translate.S) (expr : Ast.expr) =
           else
             init_ty
       in
-      let access = Translate.new_local level true(*TODO*) temp_store in
+      let access = Translate.new_local level escape temp_store in
       Env.extend_var env name (VarEntry { access; ty = var_ty; assignable = true })
 
     and trtydecls env tydecls =
@@ -451,7 +451,7 @@ let transProg' (module Translate : Translate.S) (expr : Ast.expr) =
             Type.actual_type (sym_type env ret_pos ret_sym)
         in
         let label = Temp.new_label temp_store in
-        let escapes = List.map d.params ~f:(fun _ -> true) in
+        let escapes = List.map d.params ~f:(fun p -> !(p.escape)) in
         (Translate.new_level level label escapes temp_store, param_tys, ret_ty))
       in
       let fun_names = List.map fundecls ~f:(fun d -> d.name) in
@@ -518,4 +518,5 @@ let transProg' (module Translate : Translate.S) (expr : Ast.expr) =
     transExpr Translate.outermost false Env.predefined expr
 
 let transProg (module Frame : Frame.S) (expr : Ast.expr) =
+  Find_escape.find_escape expr;
   transProg' (module Translate.Make(Frame)) expr
