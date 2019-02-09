@@ -1,6 +1,8 @@
+open Parse
+
 type temp_store
 
-type label
+type label = Symbol.t
 
 type temp
 

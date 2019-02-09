@@ -1,8 +1,9 @@
 open Base
+open Parse
 
 type temp_store = int ref
 
-type label = string
+type label = Symbol.t
 
 type temp = int
 
@@ -16,6 +17,6 @@ let new_temp store =
 let new_label store =
   let i = !store in
   Int.incr store;
-  "L" ^ Int.to_string i
+  Symbol.sym ("L" ^ Int.to_string i)
 
-let named_label label = label
+let named_label label = Symbol.sym label
