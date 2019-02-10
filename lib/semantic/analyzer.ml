@@ -1,13 +1,13 @@
 open Base
 open Parse
 
-let transProg' (module Translate : Translate.S) (expr : Ast.expr) =
+let trans_prog' (module Translate : Translate.S) (expr : Ast.expr) =
   let temp_store = Temp.new_store () in
   let unique_store = Type.new_unique_store () in
   let new_unique () = Type.new_unique unique_store in
   let module Env = Env.Make (Translate) in
 
-  let rec transExpr (level : Translate.level) (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t =
+  let rec trans_expr (level : Translate.level) (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t =
     let rec trexpr ((pos, expr) : Ast.expr) : Type.t =
       let open Ast in
       match expr with
@@ -268,7 +268,7 @@ let transProg' (module Translate : Translate.S) (expr : Ast.expr) =
 
     and trwhile pos cond body =
       let cond_ty = trexpr cond in
-      let body_ty = transExpr level true env body in
+      let body_ty = trans_expr level true env body in
       if Type.(cond_ty <> Type.IntType) then
         Errors.report pos "expected int type for condition of while loop, got %s type"
           (Type.show cond_ty);
@@ -286,7 +286,7 @@ let transProg' (module Translate : Translate.S) (expr : Ast.expr) =
 
       let access = Translate.new_local level escape temp_store in
 
-      let body_ty = transExpr level true (Env.extend_var env var
+      let body_ty = trans_expr level true (Env.extend_var env var
         (VarEntry { access; ty = Type.IntType; assignable = false })) body
       in
 
@@ -302,7 +302,7 @@ let transProg' (module Translate : Translate.S) (expr : Ast.expr) =
       Type.UnitType
 
     and trlet _pos decls body =
-      transExpr level in_loop (trdecls env decls) body
+      trans_expr level in_loop (trdecls env decls) body
 
     and trdecls env decls =
       List.fold decls ~init:env ~f:trdecl
@@ -313,7 +313,7 @@ let transProg' (module Translate : Translate.S) (expr : Ast.expr) =
       | FunDecl fundecls -> trfundecls env fundecls
 
     and trvardecl env name ty init escape pos =
-      let init_ty = transExpr level in_loop env init in
+      let init_ty = trans_expr level in_loop env init in
       let var_ty =
         match ty with
         | Some (ty_pos, ty_sym) ->
@@ -479,7 +479,7 @@ let transProg' (module Translate : Translate.S) (expr : Ast.expr) =
         check_dup_params [] fundecl.params;
 
         let param_names = List.map fundecl.params ~f:(fun p -> p.name) in
-        let body_ty = transExpr level false
+        let body_ty = trans_expr level false
           (Utils.List.fold3 param_names param_tys (Translate.params level)
             ~init:env'
             ~f:(fun env name ty access ->
@@ -515,8 +515,8 @@ let transProg' (module Translate : Translate.S) (expr : Ast.expr) =
       trexpr expr
 
   in
-    transExpr Translate.outermost false Env.predefined expr
+    trans_expr Translate.outermost false Env.predefined expr
 
-let transProg (module Frame : Frame.S) (expr : Ast.expr) =
+let trans_prog (module Frame : Frame.S) (expr : Ast.expr) =
   Find_escape.find_escape expr;
-  transProg' (module Translate.Make(Frame)) expr
+  trans_prog' (module Translate.Make(Frame)) expr
