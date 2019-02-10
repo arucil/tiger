@@ -5,6 +5,7 @@ type expr =
   | Name of Temp.label
   | Temp of Temp.temp
   | Binop of binop * expr * expr
+  | Unop of unop * expr
   | Mem of expr
   | Call of expr * expr list
   | Eseq of stmt * expr
@@ -20,6 +21,10 @@ and stmt =
 and binop =
   | Add | Sub | Mul | Div
   | And | Or | Lshift | Rshift | Arshift | Xor
+
+and unop =
+  | Neg
+  | Not
 
 and relop =
   | Eq | Ne | Lt | Le | Gt | Ge

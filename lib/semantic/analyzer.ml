@@ -1,25 +1,27 @@
 open Base
 open Parse
 
-let trans_prog' (module Translate : Translate.S) (expr : Ast.expr) =
+let trans_prog' (module Trans : Translate.S) (expr : Ast.expr) =
   let temp_store = Temp.new_store () in
   let unique_store = Type.new_unique_store () in
   let new_unique () = Type.new_unique unique_store in
-  let module Env = Env.Make (Translate) in
+  let module Env = Env.Make (Trans) in
 
-  let rec trans_expr (level : Translate.level) (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t =
-    let rec trexpr ((pos, expr) : Ast.expr) : Type.t =
+  Trans.set_temp_store temp_store;
+
+  let rec trans_expr (level : Trans.level) (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t * Semantic.Translate.ir =
+    let rec trexpr ((pos, expr) : Ast.expr) : Type.t * Semantic.Translate.ir =
       let open Ast in
       match expr with
-      | IntExpr _ -> Type.IntType
-      | StrExpr _ -> Type.StringType
-      | NilExpr -> Type.NilType
+      | IntExpr n -> (Type.IntType, Trans.int n)
+      | StrExpr s -> (Type.StringType, Trans.str s)
+      | NilExpr -> (Type.NilType, Trans.nil)
       | UnaryExpr { op; rand } -> trunary pos op rand
       | BinaryExpr { lhs; op; rhs } -> trbinary pos lhs rhs op
       | VarExpr var -> fst (trvar var)
       | SeqExpr exprs ->
         if List.is_empty exprs then
-          Type.UnitType
+          (Type.UnitType, Trans.unit)
         else
           List.map ~f:trexpr exprs |> List.last_exn
       | AssignExpr { var; expr } -> trassign pos var expr
@@ -38,68 +40,74 @@ let trans_prog' (module Translate : Translate.S) (expr : Ast.expr) =
           match Env.find_var env sym with
           | None ->
             Errors.report pos "undefined variable: %s" (Symbol.name sym);
-            (Type.IntType, true)
+            ((Type.IntType, Trans.error), true)
           | Some (FunEntry _) ->
             Errors.report pos "cannot use function as variable: %s" (Symbol.name sym);
-            (Type.IntType, true)
-          | Some (VarEntry { ty; assignable; _ }) ->
-            (Type.actual_type ty, assignable)
+            ((Type.IntType, Trans.error), true)
+          | Some (VarEntry { ty; assignable; access }) ->
+            let ir = Trans.simple_var level access in
+            ((Type.actual_type ty, ir), assignable)
         end
       | FieldVar (pos, var, sym) ->
         begin
           match trvar var with
-          | RecordType (fields, _) as ty, _ ->
+          | (RecordType (fields, _) as ty, rec_ir), _ ->
             begin
               match List.Assoc.find fields sym ~equal:Symbol.(=) with
               | None -> 
                 Errors.report pos "%s type has no field named %s"
                   (Type.show ty) (Symbol.name sym);
-                (Type.IntType, true)
+                ((Type.IntType, Trans.error), true)
               | Some ty ->
-                (Type.actual_type ty, true)
+                let ir = Trans.field_var ~record:rec_ir sym fields in
+                ((Type.actual_type ty, ir), true)
             end
-          | ty, _ ->
+          | (ty, _) as ret, _ ->
             Errors.report pos "expected record type for field selection, got %s type" (Type.show ty);
-            (ty, true)
+            (ret, true)
         end
       | IndexVar (pos, var, ((ix_pos, _) as expr)) ->
         begin
-          check_int ix_pos (trexpr expr) "index";
+          let (ix_ty, ix_ir) = trexpr expr in
+          check_int ix_pos ix_ty "index";
           match trvar var with
-          | ArrayType (elem_ty, _), _ ->
-            (Type.actual_type elem_ty, true)
-          | ty, _ ->
+          | (ArrayType (elem_ty, _), arr_ir), _ ->
+            let ir = Trans.index_var ~array:arr_ir ~index:ix_ir in
+            ((Type.actual_type elem_ty, ir), true)
+          | (ty, _) as ret, _ ->
             Errors.report pos "cannot index on %s type" (Type.show ty);
-            (ty, true)
+            (ret, true)
         end
 
     (* report non-int type *)
     and check_int pos ty operand =
-      if Type.(ty <> Type.IntType) then
+      if Type.(ty <> IntType) then
         Errors.report pos "expected int type for %s, got %s type"
           operand (Type.show ty)
 
     (* check operand type for equality/non-equality operator*)
     and check_eq_type pos ty operand =
-      if Type.(ty <> Type.IntType && ty <> Type.StringType && ty <> Type.NilType)
+      if Type.(ty <> IntType && ty <> StringType && ty <> NilType)
           && not (Type.is_record ty) && not (Type.is_array ty) then
         Errors.report pos "expected int, string, record or array type for %s, got %s type"
           operand (Type.show ty)
 
-    and trunary _pos _op ((rand_pos, _) as rand) =
-      let rand_ty = trexpr rand in
+    and trunary _pos op ((rand_pos, _) as rand) =
+      let (rand_ty, rand_ir) = trexpr rand in
       check_int rand_pos rand_ty "operand of negation";
-      Type.IntType
+      let ir = Trans.unary op rand_ir in
+      (Type.IntType, ir)
 
     and trbinary pos ((lhs_pos, _) as lhs) ((rhs_pos, _) as rhs) op =
-      let lhs_ty = trexpr lhs in
-      let rhs_ty = trexpr rhs in
+      let (lhs_ty, lhs_ir) = trexpr lhs in
+      let (rhs_ty, rhs_ir) = trexpr rhs in
+      let ir = Trans.binary op lhs_ir rhs_ir in
       match op with
       | AddOp | SubOp | MulOp | DivOp | AndOp | OrOp ->
         begin
           check_int lhs_pos lhs_ty ("left-hand side of " ^ opstr op);
           check_int rhs_pos rhs_ty ("right-hand side of " ^ opstr op);
-          Type.IntType
+          (Type.IntType, ir)
         end
       | EqOp | NeqOp ->
         begin
@@ -110,25 +118,25 @@ let trans_prog' (module Translate : Translate.S) (expr : Ast.expr) =
             Errors.report pos "incompatible operand types for %s"
               (opstr op);
 
-          if Type.(lhs_ty = Type.NilType && rhs_ty = Type.NilType) then
+          if Type.(lhs_ty = NilType && rhs_ty = NilType) then
             Errors.report pos "cannot determine the types of the operands";
 
-          Type.IntType
+          (Type.IntType, ir)
         end
       | GtOp | LtOp | GeOp | LeOp ->
         begin
-          if Type.(lhs_ty <> Type.IntType && lhs_ty <> Type.StringType) then
+          if Type.(lhs_ty <> IntType && lhs_ty <> StringType) then
             Errors.report lhs_pos "expected int or string type for left-hand side of %s, got %s type"
               (opstr op) (Type.show lhs_ty);
 
-          if Type.(rhs_ty <> Type.IntType && rhs_ty <> Type.StringType) then
+          if Type.(rhs_ty <> IntType && rhs_ty <> StringType) then
             Errors.report rhs_pos "expected int or string type for right-hand side of %s, got %s type"
               (opstr op) (Type.show rhs_ty);
 
           if Type.(lhs_ty <> rhs_ty) then
             Errors.report pos "incompatible operand types for %s" (opstr op);
 
-          Type.IntType
+          (Type.IntType, ir)
         end
 
     and opstr : Ast.op -> string = function
@@ -229,7 +237,7 @@ let trans_prog' (module Translate : Translate.S) (expr : Ast.expr) =
       let size_ty = trexpr size_expr in
       let init_ty = trexpr init_expr in
       begin
-        if Type.(size_ty <> Type.IntType) then
+        if Type.(size_ty <> IntType) then
           Errors.report size_pos "expected int type for array size, got %s type"
             (Type.show size_ty);
 
@@ -255,24 +263,30 @@ let trans_prog' (module Translate : Translate.S) (expr : Ast.expr) =
       end
 
     and trif pos cond conseq alt =
-      let cond_ty = trexpr cond in
-      let conseq_ty = trexpr conseq in
-      let alt_ty = Option.value_map alt ~default:Type.UnitType ~f:trexpr
+      let (cond_ty, cond_ir) = trexpr cond in
+      let (conseq_ty, conseq_ir) = trexpr conseq in
+      let (alt_ty, alt_ir) = Option.value_map alt ~default:(Type.UnitType, Trans.unit) ~f:trexpr
       in
-        if Type.(cond_ty <> Type.IntType) then
+      let ir =
+        if Type.(conseq_ty = UnitType && alt_ty = UnitType) then
+          Trans.if_stmt ~cond:cond_ir ~conseq:conseq_ir ~alt:alt_ir
+        else
+          Trans.if' ~cond:cond_ir ~conseq:conseq_ir ~alt:alt_ir
+      in
+        if Type.(cond_ty <> IntType) then
           Errors.report pos "expected int type for condition of if expression, got %s type"
             (Type.show cond_ty);
         if not (Type.is_compatible conseq_ty alt_ty) then
           Errors.report pos "incompatible branch types for if expression";
-        conseq_ty
+        (conseq_ty, ir)
 
     and trwhile pos cond body =
       let cond_ty = trexpr cond in
       let body_ty = trans_expr level true env body in
-      if Type.(cond_ty <> Type.IntType) then
+      if Type.(cond_ty <> IntType) then
         Errors.report pos "expected int type for condition of while loop, got %s type"
           (Type.show cond_ty);
-      if Type.(body_ty <> Type.UnitType) then
+      if Type.(body_ty <> UnitType) then
         Errors.report pos "expected unit type for body of while loop, got %s type"
           (Type.show body_ty);
       Type.UnitType
@@ -284,13 +298,13 @@ let trans_prog' (module Translate : Translate.S) (expr : Ast.expr) =
       check_int pos low_ty "lower bound of for loop";
       check_int pos high_ty "higher bound of for loop";
 
-      let access = Translate.new_local level escape temp_store in
+      let access = Trans.new_local level escape temp_store in
 
       let body_ty = trans_expr level true (Env.extend_var env var
         (VarEntry { access; ty = Type.IntType; assignable = false })) body
       in
 
-      if Type.(body_ty <> Type.UnitType) then
+      if Type.(body_ty <> UnitType) then
         Errors.report pos "expected unit type for body of for loop, got %s type"
           (Type.show body_ty);
 
@@ -321,7 +335,7 @@ let trans_prog' (module Translate : Translate.S) (expr : Ast.expr) =
             match Env.find_type env ty_sym with
             | None ->
               Errors.report ty_pos "undefined type: %s" (Symbol.name ty_sym);
-              if Type.(init_ty = Type.NilType) then
+              if Type.(init_ty = NilType) then
                 Type.RecordType ([], new_unique ())
               else
                 init_ty
@@ -333,7 +347,7 @@ let trans_prog' (module Translate : Translate.S) (expr : Ast.expr) =
               ty
           end
         | None ->
-          if Type.(init_ty = Type.NilType) then
+          if Type.(init_ty = NilType) then
             begin
               Errors.report pos "variable declaration must specify type for nil initial value";
               Type.RecordType ([], new_unique ())
@@ -341,7 +355,7 @@ let trans_prog' (module Translate : Translate.S) (expr : Ast.expr) =
           else
             init_ty
       in
-      let access = Translate.new_local level escape temp_store in
+      let access = Trans.new_local level escape temp_store in
       Env.extend_var env name (VarEntry { access; ty = var_ty; assignable = true })
 
     and trtydecls env tydecls =
@@ -452,7 +466,7 @@ let trans_prog' (module Translate : Translate.S) (expr : Ast.expr) =
             Type.actual_type (sym_type env ret_pos ret_sym)
         in
         let escapes = List.map d.params ~f:(fun p -> !(p.escape)) in
-        (Translate.new_level level label escapes temp_store, param_tys, ret_ty))
+        (Trans.new_level level label escapes temp_store, param_tys, ret_ty))
       in
       let fun_names = List.map fundecls ~f:(fun d -> d.name) in
       let env' = Utils.List.fold3 labels fun_names funs ~init:env
@@ -480,7 +494,7 @@ let trans_prog' (module Translate : Translate.S) (expr : Ast.expr) =
 
         let param_names = List.map fundecl.params ~f:(fun p -> p.name) in
         let body_ty = trans_expr level false
-          (Utils.List.fold3 param_names param_tys (Translate.params level)
+          (Utils.List.fold3 param_names param_tys (Trans.params level)
             ~init:env'
             ~f:(fun env name ty access ->
               Env.extend_var env name (VarEntry { access; ty; assignable = true })))
@@ -515,8 +529,8 @@ let trans_prog' (module Translate : Translate.S) (expr : Ast.expr) =
       trexpr expr
 
   in
-    trans_expr Translate.outermost false Env.predefined expr
+    trans_expr Trans.outermost false Env.predefined expr
 
-let trans_prog (module Frame : Frame.S) (expr : Ast.expr) =
+let trans_prog (module Frame : Frame.S) (expr : Ast.expr) : Type.t * Translate.ir =
   Find_escape.find_escape expr;
   trans_prog' (module Translate.Make(Frame)) expr

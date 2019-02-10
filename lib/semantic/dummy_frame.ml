@@ -37,3 +37,15 @@ let params t = t.params
 let new_local t escape temp_store =
   if escape then InFrame 0
   else InReg (Temp.new_temp temp_store)
+
+(* TODO: pass temp_store? *)
+let fp = Temp.new_temp (Temp.new_store ())
+
+let word_size = 4
+
+let access_expr access base =
+  match access with
+  | InFrame offset ->
+    let open Ir in
+    Mem (Binop (Add, Temp (fp), Const (offset)))
+  | InReg reg -> Temp reg
