@@ -14,3 +14,6 @@ val fold_right2 : 'a list -> 'b list -> init:'c -> f:('a -> 'b -> 'c -> 'c) -> '
 
 (** ignore unequal lengths *)
 val fold3 : 'b list -> 'c list -> 'd list -> init:'a -> f:('a -> 'b -> 'c -> 'd -> 'a) -> 'a
+
+(* if not found, return -1 *)
+val find_index : 'a list -> f:('a -> bool) -> int

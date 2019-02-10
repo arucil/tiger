@@ -32,3 +32,12 @@ let rec fold3 xs ys zs ~init ~f =
   | (x :: xs'), (y :: ys'), (z :: zs') ->
     fold3 xs' ys' zs' ~init:(f init x y z) ~f
   | _ -> init
+
+let find_index xs ~f =
+  let rec go i = function
+    | [] -> -1
+    | x :: xs ->
+      if f x then i
+      else go (i + 1) xs
+  in
+    go 0 xs
