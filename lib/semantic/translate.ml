@@ -5,7 +5,6 @@ type ir =
   | Expr of Ir.expr
   | Stmt of Ir.stmt
   | Cond of (Temp.label -> Temp.label -> Ir.stmt)
-  | Err
 
 module type S = sig
   type level
@@ -40,6 +39,8 @@ module type S = sig
   val unary : Ast.uop -> ir -> ir
 
   val binary : Ast.op -> ir -> ir -> ir
+
+  val str_binary : Ast.op -> ir -> ir -> ir
 
   val if_stmt : cond:ir -> conseq:ir -> alt:ir -> ir
 
@@ -104,7 +105,6 @@ module Make (Frame : Frame.S) = struct
           Label t;
         ],
         Temp r)
-    | Err -> Utils.Exn.unreachable ()
 
   let to_stmt (ir : ir) : Ir.stmt =
     match ir with
@@ -113,7 +113,6 @@ module Make (Frame : Frame.S) = struct
     | Cond c ->
       let z = Temp.new_label !temp_store in
       Seq (c z z, Label z)
-    | Err -> Utils.Exn.unreachable ()
 
   let to_cond (ir : ir) : Temp.label -> Temp.label -> Ir.stmt =
     match ir with
@@ -125,29 +124,27 @@ module Make (Frame : Frame.S) = struct
       | _ -> fun t f -> Cjump (Eq, e, Const 0, t, f))
     | Stmt _ -> Utils.Exn.unreachable ()
     | Cond c -> c
-    | Err -> Utils.Exn.unreachable ()
 
-  let error = Err
-
-  let is_err = function
-    | Err -> true
-    | _ -> false
+  let error = Expr (Ir.Const 0)
 
   let simple_var use_level (def_level, access) =
-    let rec build_static_links level expr =
-      if phys_equal level def_level then
-        expr
-      else
-        (let static_link = List.hd_exn (Frame.params level.frame) in
-        build_static_links (Option.value_exn level.parent)
-          (Frame.access_expr static_link expr))
-    in
-    Expr (Frame.access_expr access (build_static_links use_level (Temp Frame.fp)))
+    if Errors.has_errors () then
+      error
+    else
+      let rec build_static_links level expr =
+        if phys_equal level def_level then
+          expr
+        else
+          (let static_link = List.hd_exn (Frame.params level.frame) in
+          build_static_links (Option.value_exn level.parent)
+            (Frame.access_expr static_link expr))
+      in
+      Expr (Frame.access_expr access (build_static_links use_level (Temp Frame.fp)))
   
   (* TODO: emit code that check nil *)
   let field_var ~record sym fields =
-    if is_err record then
-      Err
+    if Errors.has_errors () then
+      error
     else
       let i = Utils.List.find_index fields
         ~f:(fun (sym', _) -> Symbol.(=) sym sym')
@@ -157,8 +154,8 @@ module Make (Frame : Frame.S) = struct
 
   (* TODO: emit code that check out-of-bound *)
   let index_var ~array ~index =
-    if is_err array || is_err index then
-      Err
+    if Errors.has_errors () then
+      error
     else
       let open Ir in
       Expr (Mem (Binop (Add, to_expr array, Binop (Mul, to_expr index, Const Frame.word_size))))
@@ -174,17 +171,16 @@ module Make (Frame : Frame.S) = struct
   let unit = Stmt (Ir.Expr (Ir.Const 0))
 
   let unary op rand =
-    if is_err rand then
-      Err
+    if Errors.has_errors () then
+      error
     else
       let open Ir in
       match op with
       | Ast.NegOp -> Expr (Unop (Neg, to_expr rand))
 
-  (* TODO: string comparison *)
-  let binary op lhs rhs =
-    if is_err lhs || is_err rhs then
-      Err
+  let binary op lhs rhs : ir =
+    if Errors.has_errors () then
+      error
     else
       let open Ir in
       match op with
@@ -231,9 +227,34 @@ module Make (Frame : Frame.S) = struct
             cr t f;
           ])
 
+  (* TODO: implement compare_str *)
+  let str_binary op lhs rhs : ir =
+    if Errors.has_errors () then
+      error
+    else
+      let op =
+        (match op with
+        | Ast.EqOp -> Ir.Eq
+        | NeqOp -> Ne
+        | GtOp -> Gt
+        | GeOp -> Ge
+        | LtOp -> Lt
+        | LeOp -> Le
+        | _ -> Utils.Exn.unreachable ())
+      in
+      let open Ir in
+      Cond (fun t f ->
+        Cjump (op,
+          Call (Name (Temp.named_label "compare_str"),
+            [to_expr lhs; to_expr rhs]),
+          Const 0,
+          t, f))
+
+  (* if two branches are both statements, no temp is need to store the results
+  *)
   let if_stmt ~cond ~conseq ~alt =
-    if is_err cond || is_err conseq || is_err alt then
-      Err
+    if Errors.has_errors () then
+      error
     else
       let cond = to_cond cond in
       let conseq = to_stmt conseq in
@@ -252,9 +273,11 @@ module Make (Frame : Frame.S) = struct
         Label z;
       ])
 
+  (* if at least one branch is Cond, handle them specially to avoid redundant jumps
+  *)
   let if' ~cond ~conseq ~alt =
-    if is_err cond || is_err conseq || is_err alt then
-      Err
+    if Errors.has_errors () then
+      error
     else
       let cond = to_cond cond in
       match conseq, alt with

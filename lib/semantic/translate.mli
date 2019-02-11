@@ -37,6 +37,8 @@ module type S = sig
 
   val binary : Ast.op -> ir -> ir -> ir
 
+  val str_binary : Ast.op -> ir -> ir -> ir
+
   val if_stmt : cond:ir -> conseq:ir -> alt:ir -> ir
 
   val if' : cond:ir -> conseq:ir -> alt:ir -> ir

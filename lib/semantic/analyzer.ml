@@ -62,9 +62,9 @@ let trans_prog' (module Trans : Translate.S) (expr : Ast.expr) =
                 let ir = Trans.field_var ~record:rec_ir sym fields in
                 ((Type.actual_type ty, ir), true)
             end
-          | (ty, _) as ret, _ ->
+          | (ty, _), _ ->
             Errors.report pos "expected record type for field selection, got %s type" (Type.show ty);
-            (ret, true)
+            ((ty, Trans.error), true)
         end
       | IndexVar (pos, var, ((ix_pos, _) as expr)) ->
         begin
@@ -74,12 +74,12 @@ let trans_prog' (module Trans : Translate.S) (expr : Ast.expr) =
           | (ArrayType (elem_ty, _), arr_ir), _ ->
             let ir = Trans.index_var ~array:arr_ir ~index:ix_ir in
             ((Type.actual_type elem_ty, ir), true)
-          | (ty, _) as ret, _ ->
+          | (ty, _), _ ->
             Errors.report pos "cannot index on %s type" (Type.show ty);
-            (ret, true)
+            ((ty, Trans.error), true)
         end
 
-    (* report non-int type *)
+    (* report non-int type, if fail return true *)
     and check_int pos ty operand =
       if Type.(ty <> IntType) then
         Errors.report pos "expected int type for %s, got %s type"
@@ -101,43 +101,46 @@ let trans_prog' (module Trans : Translate.S) (expr : Ast.expr) =
     and trbinary pos ((lhs_pos, _) as lhs) ((rhs_pos, _) as rhs) op =
       let (lhs_ty, lhs_ir) = trexpr lhs in
       let (rhs_ty, rhs_ir) = trexpr rhs in
-      let ir = Trans.binary op lhs_ir rhs_ir in
-      match op with
-      | AddOp | SubOp | MulOp | DivOp | AndOp | OrOp ->
-        begin
-          check_int lhs_pos lhs_ty ("left-hand side of " ^ opstr op);
-          check_int rhs_pos rhs_ty ("right-hand side of " ^ opstr op);
-          (Type.IntType, ir)
-        end
-      | EqOp | NeqOp ->
-        begin
-          check_eq_type lhs_pos lhs_ty ("left-hand side of " ^ opstr op);
-          check_eq_type rhs_pos rhs_ty ("right-hand side of " ^ opstr op);
+      let ty =
+        (match op with
+        | AddOp | SubOp | MulOp | DivOp | AndOp | OrOp ->
+          begin
+            check_int lhs_pos lhs_ty ("left-hand side of " ^ opstr op);
+            check_int rhs_pos rhs_ty ("right-hand side of " ^ opstr op);
+            Type.IntType
+          end
+        | EqOp | NeqOp ->
+          begin
+            check_eq_type lhs_pos lhs_ty ("left-hand side of " ^ opstr op);
+            check_eq_type rhs_pos rhs_ty ("right-hand side of " ^ opstr op);
 
-          if not (Type.is_compatible lhs_ty rhs_ty) then
-            Errors.report pos "incompatible operand types for %s"
-              (opstr op);
+            if not (Type.is_compatible lhs_ty rhs_ty) then
+              Errors.report pos "incompatible operand types for %s"
+                (opstr op);
 
-          if Type.(lhs_ty = NilType && rhs_ty = NilType) then
-            Errors.report pos "cannot determine the types of the operands";
+            if Type.(lhs_ty = NilType && rhs_ty = NilType) then
+              Errors.report pos "cannot determine the types of the operands";
 
-          (Type.IntType, ir)
-        end
-      | GtOp | LtOp | GeOp | LeOp ->
-        begin
-          if Type.(lhs_ty <> IntType && lhs_ty <> StringType) then
-            Errors.report lhs_pos "expected int or string type for left-hand side of %s, got %s type"
-              (opstr op) (Type.show lhs_ty);
+            Type.IntType
+          end
+        | GtOp | LtOp | GeOp | LeOp ->
+          begin
+            if Type.(lhs_ty <> IntType && lhs_ty <> StringType) then
+              Errors.report lhs_pos "expected int or string type for left-hand side of %s, got %s type"
+                (opstr op) (Type.show lhs_ty);
 
-          if Type.(rhs_ty <> IntType && rhs_ty <> StringType) then
-            Errors.report rhs_pos "expected int or string type for right-hand side of %s, got %s type"
-              (opstr op) (Type.show rhs_ty);
+            if Type.(rhs_ty <> IntType && rhs_ty <> StringType) then
+              Errors.report rhs_pos "expected int or string type for right-hand side of %s, got %s type"
+                (opstr op) (Type.show rhs_ty);
 
-          if Type.(lhs_ty <> rhs_ty) then
-            Errors.report pos "incompatible operand types for %s" (opstr op);
+            if Type.(lhs_ty <> rhs_ty) then
+              Errors.report pos "incompatible operand types for %s" (opstr op);
 
-          (Type.IntType, ir)
-        end
+            Type.IntType
+          end)
+        in
+        let ir = Trans.binary op lhs_ir rhs_ir in
+          (ty, ir)
 
     and opstr : Ast.op -> string = function
       | AddOp -> "'+'"
