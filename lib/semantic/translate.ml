@@ -94,17 +94,14 @@ module Make (Frame : Frame.S) = struct
       let r = Temp.new_temp !temp_store in
       let t = Temp.new_label !temp_store in
       let f = Temp.new_label !temp_store in
-      let z = Temp.new_label !temp_store in
       let open Ir in
       Eseq (
         seq [
-          c t f;
-          Label t;
           Move (Temp r, Const 1);
-          Jump (Name z, [z]);
+          c t f;
           Label f;
           Move (Temp r, Const 0);
-          Label z;
+          Label t;
         ],
         Temp r)
     | Err -> Utils.Exn.unreachable ()
