@@ -45,4 +45,4 @@ module type S = sig
 
 end
 
-module Make : functor (Frame : Frame.S) -> S
+module Make : functor (Platf : Platform.S) -> S

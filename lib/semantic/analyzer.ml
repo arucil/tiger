@@ -534,6 +534,6 @@ let trans_prog' (module Trans : Translate.S) (expr : Ast.expr) =
   in
     trans_expr Trans.outermost false Env.predefined expr
 
-let trans_prog (module Frame : Frame.S) (expr : Ast.expr) : Type.t * Translate.ir =
+let trans_prog (module Platf : Platform.S) (expr : Ast.expr) : Type.t * Translate.ir =
   Find_escape.find_escape expr;
-  trans_prog' (module Translate.Make(Frame)) expr
+  trans_prog' (module Translate.Make(Platf)) expr

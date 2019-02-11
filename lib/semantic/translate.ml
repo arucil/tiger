@@ -51,15 +51,15 @@ end
 
 (* TODO: Exercise 6.5 eliminate unnecessary static links *)
 
-module Make (Frame : Frame.S) = struct
+module Make (Platf : Platform.S) = struct
 
   type level =
     {
       parent : level option;
-      frame : Frame.t;
+      frame : Platf.Frame.t;
     }
 
-  and access = level * Frame.access
+  and access = level * Platf.access
 
   let temp_store = ref (Temp.new_store ())
 
@@ -69,22 +69,22 @@ module Make (Frame : Frame.S) = struct
     let temp_store = Temp.new_store () in
     {
       parent = None;
-      frame = Frame.new_frame (Temp.named_label "main") [] temp_store
+      frame = Platf.Frame.new_frame (Temp.named_label "main") [] temp_store
     }
 
   let new_level parent label params temp_store =
     {
       parent = Some parent;
-      frame = Frame.new_frame label (true :: params) temp_store;
+      frame = Platf.Frame.new_frame label (true :: params) temp_store;
     }
 
   let params level =
-    Frame.params level.frame
+    Platf.Frame.params level.frame
       |> List.tl_exn
       |> List.map ~f:(fun acc -> (level, acc))
 
   let new_local level escape =
-    (level, Frame.new_local level.frame escape !temp_store)
+    (level, Platf.Frame.new_local level.frame escape !temp_store)
 
 
   let to_expr (ir : ir) : Ir.expr =
@@ -135,11 +135,11 @@ module Make (Frame : Frame.S) = struct
         if phys_equal level def_level then
           expr
         else
-          (let static_link = List.hd_exn (Frame.params level.frame) in
+          (let static_link = List.hd_exn (Platf.Frame.params level.frame) in
           build_static_links (Option.value_exn level.parent)
-            (Frame.access_expr static_link expr))
+            (Platf.access_expr static_link expr))
       in
-      Expr (Frame.access_expr access (build_static_links use_level (Temp Frame.fp)))
+      Expr (Platf.access_expr access (build_static_links use_level (Temp Platf.fp)))
   
   (* TODO: emit code that check nil *)
   let field_var ~record sym fields =
@@ -150,7 +150,7 @@ module Make (Frame : Frame.S) = struct
         ~f:(fun (sym', _) -> Symbol.(=) sym sym')
       in
       let open Ir in
-      Expr (Mem (Binop (Add, to_expr record, Binop (Mul, Const i, Const Frame.word_size))))
+      Expr (Mem (Binop (Add, to_expr record, Binop (Mul, Const i, Const Platf.word_size))))
 
   (* TODO: emit code that check out-of-bound *)
   let index_var ~array ~index =
@@ -158,7 +158,7 @@ module Make (Frame : Frame.S) = struct
       error
     else
       let open Ir in
-      Expr (Mem (Binop (Add, to_expr array, Binop (Mul, to_expr index, Const Frame.word_size))))
+      Expr (Mem (Binop (Add, to_expr array, Binop (Mul, to_expr index, Const Platf.word_size))))
 
   let int n =
     let open Ir in
@@ -166,7 +166,7 @@ module Make (Frame : Frame.S) = struct
 
   let str s =
     let label = Temp.new_label !temp_store in
-    let () = Frame.string_lit label s in (* TODO: store fragment globally *)
+    let () = Platf.string_lit label s in (* TODO: store fragment globally *)
     Expr (Ir.Name label)
 
   let nil = Expr (Const 0)
@@ -248,8 +248,7 @@ module Make (Frame : Frame.S) = struct
       let open Ir in
       Cond (fun t f ->
         Cjump (op,
-          Call (Name (Temp.named_label "compare_str"),
-            [to_expr lhs; to_expr rhs]),
+          Platf.external_call "compare_str" [to_expr lhs; to_expr rhs],
           Const 0,
           t, f))
 
