@@ -1,3 +1,4 @@
+open Base
 
 module type S = sig
   type t
@@ -6,6 +7,8 @@ module type S = sig
   val fp : Temp.temp
 
   val word_size : int
+
+  val string_lit : Temp.label -> string -> unit
 
   val new_frame : Temp.label -> bool list -> Temp.temp_store -> t
 
@@ -16,4 +19,5 @@ module type S = sig
   val new_local : t -> bool -> Temp.temp_store -> access
 
   val access_expr : access -> Ir.expr -> Ir.expr
+
 end

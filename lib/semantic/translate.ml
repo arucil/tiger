@@ -164,7 +164,10 @@ module Make (Frame : Frame.S) = struct
     let open Ir in
     Expr (Const n)
 
-  let str s = ()
+  let str s =
+    let label = Temp.new_label !temp_store in
+    let () = Frame.string_lit label s in (* TODO: store fragment globally *)
+    Expr (Ir.Name label)
 
   let nil = Expr (Const 0)
 
