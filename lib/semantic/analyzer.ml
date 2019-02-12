@@ -9,7 +9,7 @@ let trans_prog' (module Trans : Translate.S) (expr : Ast.expr) =
 
   Trans.set_temp_store temp_store;
 
-  let rec trans_expr (level : Trans.level) (in_loop : bool) (env : Env.t) (expr : Ast.expr) : Type.t * Semantic.Translate.ir =
+  let rec trans_expr (level : Trans.level) (break : Temp.label option) (env : Env.t) (expr : Ast.expr) : Type.t * Semantic.Translate.ir =
     let rec trexpr ((pos, expr) : Ast.expr) : Type.t * Semantic.Translate.ir =
       let open Ast in
       match expr with
@@ -173,16 +173,20 @@ let trans_prog' (module Trans : Translate.S) (expr : Ast.expr) =
         end
 
     and trrecord pos ty_sym fields =
-      let actual_fields = List.map fields
-        ~f:(fun (pos, sym, expr) -> (pos, sym, trexpr expr))
+      let (actual_fields, field_irs) =
+        List.unzip (List.map fields
+          ~f:(fun (pos, sym, expr) ->
+            let (ty, ir) = trexpr expr in
+            ((pos, sym, ty), ir)))
       in
       begin
         match Env.find_type env ty_sym with
         | None ->
           Errors.report pos "undefined record type: %s" (Symbol.name ty_sym);
-          Type.RecordType
+          (Type.RecordType
             (List.map ~f:(fun (_, sym, ty) -> (sym, ty)) actual_fields,
-            new_unique ())
+            new_unique ()),
+           Trans.error)
         | Some ty ->
           begin
             let ty = Type.actual_type ty in
@@ -192,12 +196,13 @@ let trans_prog' (module Trans : Translate.S) (expr : Ast.expr) =
                 Errors.report pos "expected %d fields, got %d fields"
                   (List.length fields) (List.length actual_fields);
               Utils.List.iter2 ~f:check_field fields actual_fields;
-              ty
+              let ir = Trans.record field_irs in
+              (ty, ir)
             | _ ->
               Errors.report pos "expected record type for record creation, got %s type"
                 (Type.show ty);
               (* empty record type *)
-              Type.RecordType ([], new_unique ())
+              (Type.RecordType ([], new_unique ()), Trans.error)
           end
       end
 
@@ -237,8 +242,8 @@ let trans_prog' (module Trans : Translate.S) (expr : Ast.expr) =
 
 
     and trarray pos ty_sym ((size_pos, _) as size_expr) init_expr =
-      let size_ty = trexpr size_expr in
-      let init_ty = trexpr init_expr in
+      let (size_ty, size_ir) = trexpr size_expr in
+      let (init_ty, init_ir) = trexpr init_expr in
       begin
         if Type.(size_ty <> IntType) then
           Errors.report size_pos "expected int type for array size, got %s type"
@@ -247,7 +252,7 @@ let trans_prog' (module Trans : Translate.S) (expr : Ast.expr) =
         match Env.find_type env ty_sym with
         | None ->
           Errors.report pos "undefined array type: %s" (Symbol.name ty_sym);
-          Type.ArrayType (init_ty, new_unique ())
+          (Type.ArrayType (init_ty, new_unique ()), Trans.error)
         | Some ty ->
           let ty = Type.actual_type ty in
           match ty with
@@ -257,12 +262,13 @@ let trans_prog' (module Trans : Translate.S) (expr : Ast.expr) =
               if Type.(elem_ty <> init_ty) then
                 Errors.report pos "expected %s type for initial value of array, got %s type"
                   (Type.show elem_ty) (Type.show init_ty);
-              ty
+              let ir = Trans.array ~size:size_ir ~init:init_ir in
+              (ty, ir)
             end
           | _ ->
             Errors.report pos "expected array type for array creation, got %s type"
               (Type.show ty);
-            Type.ArrayType (init_ty, new_unique ())
+            (Type.ArrayType (init_ty, new_unique ()), Trans.error)
       end
 
     and trif pos cond conseq alt =
@@ -284,42 +290,52 @@ let trans_prog' (module Trans : Translate.S) (expr : Ast.expr) =
         (conseq_ty, ir)
 
     and trwhile pos cond body =
-      let cond_ty = trexpr cond in
-      let body_ty = trans_expr level true env body in
+      let (cond_ty, cond_ir) = trexpr cond in
       if Type.(cond_ty <> IntType) then
         Errors.report pos "expected int type for condition of while loop, got %s type"
           (Type.show cond_ty);
+
+      let break_label = Temp.new_label temp_store in
+      let (body_ty, body_ir) = trans_expr level (Some break_label) env body in
       if Type.(body_ty <> UnitType) then
         Errors.report pos "expected unit type for body of while loop, got %s type"
           (Type.show body_ty);
-      Type.UnitType
+      let ir = Trans.while' ~break:break_label ~cond:cond_ir ~body:body_ir in
+      (Type.UnitType, ir)
 
     and trfor pos var escape low high body =
-      let low_ty = trexpr low in
-      let high_ty = trexpr high in
+      let (low_ty, low_ir) = trexpr low in
+      let (high_ty, high_ir) = trexpr high in
 
       check_int pos low_ty "lower bound of for loop";
       check_int pos high_ty "higher bound of for loop";
 
-      let access = Trans.new_local level escape temp_store in
+      let access = Trans.new_local level escape in
 
-      let body_ty = trans_expr level true (Env.extend_var env var
-        (VarEntry { access; ty = Type.IntType; assignable = false })) body
+      let break_label = Temp.new_label temp_store in
+
+      let (body_ty, body_ir) = trans_expr level (Some break_label)
+        (Env.extend_var env var
+          (VarEntry { access; ty = Type.IntType; assignable = false })) body
       in
 
       if Type.(body_ty <> UnitType) then
         Errors.report pos "expected unit type for body of for loop, got %s type"
           (Type.show body_ty);
 
-      Type.UnitType
+      let ir = Trans.for' ~break:break_label access ~low:low_ir ~high:high_ir ~body:body_ir in
+      (Type.UnitType, ir)
 
     and trbreak pos =
-      if not in_loop then
+      match break with
+      | None ->
         Errors.report pos "break expression must be inside loop";
-      Type.UnitType
+        (Type.UnitType, Trans.error)
+      | Some label ->
+        (Type.UnitType, Trans.break label)
 
     and trlet _pos decls body =
-      trans_expr level in_loop (trdecls env decls) body
+      trans_expr level break (trdecls env decls) body
 
     and trdecls env decls =
       List.fold decls ~init:env ~f:trdecl
@@ -330,7 +346,7 @@ let trans_prog' (module Trans : Translate.S) (expr : Ast.expr) =
       | FunDecl fundecls -> trfundecls env fundecls
 
     and trvardecl env name ty init escape pos =
-      let init_ty = trans_expr level in_loop env init in
+      let init_ty = trans_expr level break env init in
       let var_ty =
         match ty with
         | Some (ty_pos, ty_sym) ->
@@ -496,7 +512,7 @@ let trans_prog' (module Trans : Translate.S) (expr : Ast.expr) =
         check_dup_params [] fundecl.params;
 
         let param_names = List.map fundecl.params ~f:(fun p -> p.name) in
-        let body_ty = trans_expr level false
+        let body_ty = trans_expr level None
           (Utils.List.fold3 param_names param_tys (Trans.params level)
             ~init:env'
             ~f:(fun env name ty access ->
@@ -532,7 +548,7 @@ let trans_prog' (module Trans : Translate.S) (expr : Ast.expr) =
       trexpr expr
 
   in
-    trans_expr Trans.outermost false Env.predefined expr
+    trans_expr Trans.outermost None Env.predefined expr
 
 let trans_prog (module Platf : Platform.S) (expr : Ast.expr) : Type.t * Translate.ir =
   Find_escape.find_escape expr;

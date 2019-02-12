@@ -46,6 +46,12 @@ module type S = sig
 
   val if' : cond:ir -> conseq:ir -> alt:ir -> ir
 
+  val record : ir list -> ir
+
+  val array : size:ir -> init:ir -> ir
+
+  val break : Temp.label -> ir
+
 end
 
 
@@ -338,5 +344,30 @@ module Make (Platf : Platform.S) = struct
             Move (Temp r, to_expr alt);
             Label z;
           ])
+
+  let record fields : ir =
+    if Errors.has_errors () then
+      error
+    else
+      let r = Temp.new_temp !temp_store in
+      let open Ir in
+      Expr (Eseq (
+        seq (
+          Move (Temp r, Platf.external_call "alloc_record" [Const (List.length fields)])
+          ::
+          List.mapi fields
+            ~f:(fun i field ->
+              Move (
+                Mem (Binop (Add, Temp r, Const (i * Platf.word_size))),
+                to_expr field))
+        ),
+        Temp r
+      ))
+
+  let break label : ir =
+    if Errors.has_errors () then
+      error
+    else
+      Stmt (Ir.Jump (Name label, [label]))
 
 end

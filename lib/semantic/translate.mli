@@ -43,6 +43,16 @@ module type S = sig
 
   val if' : cond:ir -> conseq:ir -> alt:ir -> ir
 
+  val record : ir list -> ir
+
+  val array : size:ir -> init:ir -> ir
+
+  val break : Temp.label -> ir
+
+  val while' : break:Temp.label -> cond:ir -> body:ir -> ir
+
+  val for' : break:Temp.label -> access -> low:ir -> high:ir -> body:ir -> ir
+
 end
 
 module Make : functor (Platf : Platform.S) -> S
