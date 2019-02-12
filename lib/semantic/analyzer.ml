@@ -216,21 +216,26 @@ let trans_prog' (module Trans : Translate.S) (expr : Ast.expr) =
           (Symbol.name actual_sym) (Type.show actual_ty)
 
     and trcall pos func args =
-      let args' = List.map args ~f:(fun ((pos, _) as expr) -> (pos, trexpr expr)) in
+      let (args', arg_irs) =
+        List.unzip (List.map args ~f:(fun ((pos, _) as expr) ->
+          let (ty, ir) = trexpr expr in
+          ((pos, ty), ir)))
+      in
       match Env.find_var env func with
       | None ->
         Errors.report pos "undefined function: %s" (Symbol.name func);
-        Type.IntType
+        (Type.IntType, Trans.error)
       | Some (VarEntry _) ->
         Errors.report pos "cannot call non-function variable: %s" (Symbol.name func);
-        Type.IntType
-      | Some (FunEntry { params; ret; _ }) ->
+        (Type.IntType, Trans.error)
+      | Some (FunEntry { params; ret; level = fun_level; label }) ->
         begin
           if List.length params <> List.length args' then
             Errors.report pos "expected %d parameters, got %d arguments"
               (List.length params) (List.length args');
           Utils.List.iter2i ~f:check_arg params args';
-          Type.actual_type ret
+          let ir = Trans.call ~fun_level ~use_level:level label arg_irs in
+          (Type.actual_type ret, ir)
         end
 
     (* check the types of a parameter and an argument are compatible *)
@@ -485,7 +490,7 @@ let trans_prog' (module Trans : Translate.S) (expr : Ast.expr) =
             Type.actual_type (sym_type env ret_pos ret_sym)
         in
         let escapes = List.map d.params ~f:(fun p -> !(p.escape)) in
-        (Trans.new_level level label escapes temp_store, param_tys, ret_ty))
+        (Trans.new_level level label escapes, param_tys, ret_ty))
       in
       let fun_names = List.map fundecls ~f:(fun d -> d.name) in
       let env' = Utils.List.fold3 labels fun_names funs ~init:env

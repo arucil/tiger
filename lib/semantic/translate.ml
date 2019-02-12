@@ -18,7 +18,7 @@ module type S = sig
 
   val params : level -> access list
 
-  val new_local : level -> bool -> Temp.temp_store -> access
+  val new_local : level -> bool -> access
 
   val error : ir
 
@@ -52,6 +52,12 @@ module type S = sig
 
   val break : Temp.label -> ir
 
+  val while' : break:Temp.label -> cond:ir -> body:ir -> ir
+
+  val for' : break:Temp.label -> access -> low:ir -> high:ir -> body:ir -> ir
+
+  val call : fun_level:level -> use_level:level -> Symbol.t -> ir list -> ir
+
 end
 
 
@@ -78,16 +84,29 @@ module Make (Platf : Platform.S) = struct
       frame = Platf.Frame.new_frame (Temp.named_label "main") [] temp_store
     }
 
-  let new_level parent label params temp_store =
+  let new_level parent label params =
     {
       parent = Some parent;
-      frame = Platf.Frame.new_frame label (true :: params) temp_store;
+      frame = Platf.Frame.new_frame label (true :: params) !temp_store;
     }
 
   let params level =
     Platf.Frame.params level.frame
       |> List.tl_exn
       |> List.map ~f:(fun acc -> (level, acc))
+
+  let static_link level =
+    List.hd_exn (Platf.Frame.params level.frame)
+
+  let build_static_links ~def_level ~use_level =
+    let rec go level expr =
+      if phys_equal level def_level then
+        expr
+      else
+        go (Option.value_exn level.parent)
+          (Platf.access_expr (static_link level) expr)
+    in
+      go use_level (Temp Platf.fp)
 
   let new_local level escape =
     (level, Platf.Frame.new_local level.frame escape !temp_store)
@@ -137,15 +156,7 @@ module Make (Platf : Platform.S) = struct
     if Errors.has_errors () then
       error
     else
-      let rec build_static_links level expr =
-        if phys_equal level def_level then
-          expr
-        else
-          (let static_link = List.hd_exn (Platf.Frame.params level.frame) in
-          build_static_links (Option.value_exn level.parent)
-            (Platf.access_expr static_link expr))
-      in
-      Expr (Platf.access_expr access (build_static_links use_level (Temp Platf.fp)))
+      Expr (Platf.access_expr access (build_static_links ~def_level ~use_level))
   
   (* TODO: emit code that check nil *)
   let field_var ~record sym fields =
@@ -166,7 +177,7 @@ module Make (Platf : Platform.S) = struct
       let open Ir in
       Expr (Mem (Binop (Add, to_expr array, Binop (Mul, to_expr index, Const Platf.word_size))))
 
-  let int n =
+  let int n : ir =
     let open Ir in
     Expr (Const n)
 
@@ -329,21 +340,23 @@ module Make (Platf : Platform.S) = struct
             Label z;
           ])
       | _ ->
-        Cond (fun t f ->
-          let t' = Temp.new_label !temp_store in
-          let f' = Temp.new_label !temp_store in
-          let z = Temp.new_label !temp_store in
-          let r = Temp.new_temp !temp_store in
-          let open Ir in
+        let r = Temp.new_temp !temp_store in
+        let t = Temp.new_label !temp_store in
+        let f = Temp.new_label !temp_store in
+        let z = Temp.new_label !temp_store in
+        let open Ir in
+        Expr (Eseq (
           seq [
-            cond t' f';
-            Label t';
+            cond t f;
+            Label t;
             Move (Temp r, to_expr conseq);
             Jump (Name z, [z]);
-            Label f';
+            Label f;
             Move (Temp r, to_expr alt);
             Label z;
-          ])
+          ],
+          Temp r
+        ))
 
   let record fields : ir =
     if Errors.has_errors () then
@@ -364,10 +377,63 @@ module Make (Platf : Platform.S) = struct
         Temp r
       ))
 
+  let array ~size ~init : ir =
+    if Errors.has_errors () then
+      error
+    else
+      Expr (Platf.external_call "alloc_array" [to_expr size; to_expr init])
+
   let break label : ir =
     if Errors.has_errors () then
       error
     else
       Stmt (Ir.Jump (Name label, [label]))
+
+  let while' ~break ~cond ~body : ir =
+    if Errors.has_errors () then
+      error
+    else
+      let cond = to_cond cond in
+      let test = Temp.new_label !temp_store in
+      let t = Temp.new_label !temp_store in
+      let open Ir in
+      Stmt (seq [
+        Label test;
+        cond t break;
+        Label t;
+        to_stmt body;
+        Jump (Name test, [test]);
+        Label break;
+      ])
+
+  let for' ~break (_, access) ~low ~high ~body : ir =
+    if Errors.has_errors () then 
+      error
+    else
+      let i = Platf.access_expr access (Temp Platf.fp) in
+      let limit = Ir.Temp (Temp.new_temp !temp_store) in
+      let t = Temp.new_label !temp_store in
+      let test = Temp.new_label !temp_store in
+      let open Ir in
+      Stmt (seq [
+        Move (i, to_expr low);
+        Move (limit, to_expr high);
+        Label test;
+        Cjump (Le, i, limit, t, break);
+        Label t;
+        to_stmt body;
+        Move (i, Binop (Add, i, Const 1));
+        Jump (Name test, [test]);
+        Label break;
+      ])
+
+  (* TODO: stdlib函数和自定义函数的调用方式不同？ *)
+  let call ~fun_level ~use_level name args : ir =
+    if Errors.has_errors () then
+      error
+    else
+      let def_level = Option.value_exn (fun_level.parent) in
+      let open Ir in
+      Expr (Call (Name name, build_static_links ~def_level ~use_level :: List.map args ~f:to_expr))
 
 end

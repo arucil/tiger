@@ -53,6 +53,8 @@ module type S = sig
 
   val for' : break:Temp.label -> access -> low:ir -> high:ir -> body:ir -> ir
 
+  val call : fun_level:level -> use_level:level -> Symbol.t -> ir list -> ir
+
 end
 
 module Make : functor (Platf : Platform.S) -> S
