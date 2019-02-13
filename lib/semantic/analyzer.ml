@@ -157,8 +157,8 @@ let trans_prog' (module Trans : Translate.S) (expr : Ast.expr) =
       | LeOp -> "'<='"
 
     and trassign _pos var ((expr_pos, _) as expr) =
-        let (var_ty, assignable) = trvar var in
-        let expr_ty = trexpr expr in
+        let ((var_ty, var_ir), assignable) = trvar var in
+        let (expr_ty, expr_ir) = trexpr expr in
         begin
           if not assignable then
             (match var with
@@ -169,7 +169,8 @@ let trans_prog' (module Trans : Translate.S) (expr : Ast.expr) =
           if not (Type.is_compatible var_ty expr_ty) then
             Errors.report expr_pos "expected %s type for right-hand side of assignment, got %s type"
               (Type.show var_ty) (Type.show expr_ty);
-          Type.UnitType
+          let ir = Trans.assign ~var:var_ir ~expr:expr_ir in
+          (Type.UnitType, ir)
         end
 
     and trrecord pos ty_sym fields =
@@ -340,18 +341,23 @@ let trans_prog' (module Trans : Translate.S) (expr : Ast.expr) =
         (Type.UnitType, Trans.break label)
 
     and trlet _pos decls body =
-      trans_expr level break (trdecls env decls) body
+      let (env', init_irs) = trdecls env decls in
+      let (body_ty, body_ir) = trans_expr level break env' body in
+      (body_ty, Trans.let' ~inits:init_irs ~body:body_ir)
 
     and trdecls env decls =
-      List.fold decls ~init:env ~f:trdecl
+      List.fold decls ~init:(env, []) ~f:trdecl
 
-    and trdecl env = function
-      | VarDecl { name; ty; init; pos; escape } -> trvardecl env name ty init !escape pos
-      | TypeDecl tydecls -> trtydecls env tydecls
-      | FunDecl fundecls -> trfundecls env fundecls
+    and trdecl (env, init_irs) (decl : Ast.decl) =
+      match decl with
+      | VarDecl { name; ty; init; pos; escape } ->
+        let (env', init_ir) = trvardecl env name ty init !escape pos in
+        (env', init_irs @ [init_ir])
+      | TypeDecl tydecls -> (trtydecls env tydecls, init_irs)
+      | FunDecl fundecls -> (trfundecls env fundecls, init_irs)
 
-    and trvardecl env name ty init escape pos =
-      let init_ty = trans_expr level break env init in
+    and trvardecl env name ty init escape pos : Env.t * Translate.ir =
+      let (init_ty, init_ir) = trans_expr level break env init in
       let var_ty =
         match ty with
         | Some (ty_pos, ty_sym) ->
@@ -379,8 +385,9 @@ let trans_prog' (module Trans : Translate.S) (expr : Ast.expr) =
           else
             init_ty
       in
-      let access = Trans.new_local level escape temp_store in
-      Env.extend_var env name (VarEntry { access; ty = var_ty; assignable = true })
+      let access = Trans.new_local level escape in
+      let ir = Trans.init_var access init_ir in
+      (Env.extend_var env name (VarEntry { access; ty = var_ty; assignable = true }), ir)
 
     and trtydecls env tydecls =
       let ty_names = List.map tydecls ~f:(fun d -> d.name) in
@@ -517,7 +524,7 @@ let trans_prog' (module Trans : Translate.S) (expr : Ast.expr) =
         check_dup_params [] fundecl.params;
 
         let param_names = List.map fundecl.params ~f:(fun p -> p.name) in
-        let body_ty = trans_expr level None
+        let (body_ty, body_ir) = trans_expr level None
           (Utils.List.fold3 param_names param_tys (Trans.params level)
             ~init:env'
             ~f:(fun env name ty access ->
@@ -526,7 +533,8 @@ let trans_prog' (module Trans : Translate.S) (expr : Ast.expr) =
         in
         if not (Type.is_compatible ret_ty body_ty) then
           Errors.report fundecl.pos "expected %s type for function body, got %s type"
-            (Type.show ret_ty) (Type.show body_ty));
+            (Type.show ret_ty) (Type.show body_ty);
+        Trans.fun' level body_ir);
 
       env'
 

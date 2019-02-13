@@ -7,6 +7,8 @@ module type S = sig
   type level
   type access
 
+  type fragment
+
   val set_temp_store : Temp.temp_store -> unit
 
   val outermost : level
@@ -39,6 +41,8 @@ module type S = sig
 
   val str_binary : Ast.op -> ir -> ir -> ir
 
+  val assign : var:ir -> expr:ir -> ir
+
   val if_stmt : cond:ir -> conseq:ir -> alt:ir -> ir
 
   val if' : cond:ir -> conseq:ir -> alt:ir -> ir
@@ -54,6 +58,14 @@ module type S = sig
   val for' : break:Temp.label -> access -> low:ir -> high:ir -> body:ir -> ir
 
   val call : fun_level:level -> use_level:level -> Symbol.t -> ir list -> ir
+
+  val let' : inits:ir list -> body:ir -> ir
+
+  val init_var : access -> ir -> ir
+
+  val fun' : level -> ir -> unit
+
+  val get_fragments : unit -> fragment list
 
 end
 

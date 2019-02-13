@@ -10,6 +10,8 @@ module type S = sig
   type level
   type access
 
+  type fragment
+
   val set_temp_store : Temp.temp_store -> unit
 
   val outermost : level
@@ -42,6 +44,8 @@ module type S = sig
 
   val str_binary : Ast.op -> ir -> ir -> ir
 
+  val assign : var:ir -> expr:ir -> ir
+
   val if_stmt : cond:ir -> conseq:ir -> alt:ir -> ir
 
   val if' : cond:ir -> conseq:ir -> alt:ir -> ir
@@ -58,6 +62,14 @@ module type S = sig
 
   val call : fun_level:level -> use_level:level -> Symbol.t -> ir list -> ir
 
+  val let' : inits:ir list -> body:ir -> ir
+
+  val init_var : access -> ir -> ir
+
+  val fun' : level -> ir -> unit
+
+  val get_fragments : unit -> fragment list
+
 end
 
 
@@ -72,6 +84,8 @@ module Make (Platf : Platform.S) = struct
     }
 
   and access = level * Platf.access
+
+  type fragment = Platf.fragment
 
   let temp_store = ref (Temp.new_store ())
 
@@ -110,6 +124,9 @@ module Make (Platf : Platform.S) = struct
 
   let new_local level escape =
     (level, Platf.Frame.new_local level.frame escape !temp_store)
+
+
+  let fragments : Platf.fragment list ref = ref []
 
 
   let to_expr (ir : ir) : Ir.expr =
@@ -182,9 +199,13 @@ module Make (Platf : Platform.S) = struct
     Expr (Const n)
 
   let str s =
-    let label = Temp.new_label !temp_store in
-    let () = Platf.string_lit label s in (* TODO: store fragment globally *)
-    Expr (Ir.Name label)
+    if Errors.has_errors () then
+      error
+    else
+      let label = Temp.new_label !temp_store in
+      let frag = Platf.string_lit label s in
+      fragments := !fragments @ [frag];
+      Expr (Ir.Name label)
 
   let nil = Expr (Const 0)
 
@@ -268,6 +289,13 @@ module Make (Platf : Platform.S) = struct
           Platf.external_call "compare_str" [to_expr lhs; to_expr rhs],
           Const 0,
           t, f))
+
+  let assign ~var ~expr : ir =
+    if Errors.has_errors () then
+      error
+    else
+      let open Ir in
+      Stmt (Move (to_expr var, to_expr expr))
 
   (* if two branches are both statements, no temp is need to store the results
   *)
@@ -435,5 +463,26 @@ module Make (Platf : Platform.S) = struct
       let def_level = Option.value_exn (fun_level.parent) in
       let open Ir in
       Expr (Call (Name name, build_static_links ~def_level ~use_level :: List.map args ~f:to_expr))
+
+  let let' ~inits ~body : ir =
+    if Errors.has_errors () then
+      error
+    else
+      Stmt (Ir.seq (List.map (inits @ [body]) ~f:to_stmt))
+
+  let init_var (_, access) init : ir =
+    if Errors.has_errors () then
+      error
+    else
+      let open Ir in
+      Stmt (Move (Platf.access_expr access (Temp Platf.fp), to_expr init))
+
+  let fun' level body =
+    let body = Ir.Move (Ir.Temp Platf.rv, to_expr body) in
+    let body = Platf.Frame.view_shift level.frame body in
+    let frag = Platf.fun' level.frame body in
+    fragments := !fragments @ [frag]
+
+  let get_fragments () = !fragments
 
 end

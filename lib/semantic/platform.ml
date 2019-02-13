@@ -17,13 +17,21 @@ module type S = sig
 
     val new_local : t -> bool -> Temp.temp_store -> access
 
+    val view_shift : t -> Ir.stmt -> Ir.stmt
+
   end
 
   val fp : Temp.temp
 
+  val rv : Temp.temp
+
   val word_size : int
 
-  val string_lit : Temp.label -> string -> unit
+  type fragment
+
+  val string_lit : Temp.label -> string -> fragment
+
+  val fun' : Frame.t -> Ir.stmt -> fragment
 
   val external_call : string -> Ir.expr list -> Ir.expr
 

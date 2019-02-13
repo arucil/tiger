@@ -12,7 +12,7 @@ let run_analyzer s =
   Errors.set_out oc;
   Errors.set_source_name "-";
   let expr = Parser.prog Lexer.get_token (Lexing.from_string s) in
-  let ty = Analyzer.trans_prog (module Dummy_frame) expr in
+  let (ty, _) = Analyzer.trans_prog (module Dummy_platf) expr in
   Out_channel.close oc;
   let errors = In_channel.read_all temp_file in
   (ty, errors)
