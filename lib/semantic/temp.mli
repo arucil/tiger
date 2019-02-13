@@ -1,9 +1,11 @@
 open Base
 open Parse
 
+module Format = Caml.Format
+
 type temp_store
 
-type label = Symbol.t
+type label = Symbol.t [@@deriving show]
 
 type temp
 
@@ -16,3 +18,6 @@ val new_label : temp_store -> label
 val new_labels : int -> temp_store -> label list
 
 val named_label : string -> label
+
+
+val pp_temp : Format.formatter -> temp -> unit
