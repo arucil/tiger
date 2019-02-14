@@ -37,9 +37,7 @@ module Frame = struct
     let entry_view_shift = ref [] in
     let exit_view_shift = ref [] in
     let next_offset = ref (-word_size) in
-    {
-      label;
-      params = List.mapi params
+    let params = List.mapi params
       (**
       TODO:
       params根据escape指定reg或stack,
@@ -64,8 +62,12 @@ module Frame = struct
               InReg (Temp.new_temp temp_store)
           in
           entry_view_shift := !entry_view_shift
-            @ [let open Ir in Move (access_expr dest (Temp fp), src)];
-          dest);
+            @ [Ir.Move (access_expr dest (Ir.Temp fp), src)];
+          dest)
+    in
+    {
+      label;
+      params;
       next_offset = !next_offset;
       entry_view_shift = !entry_view_shift;
       exit_view_shift = !exit_view_shift;

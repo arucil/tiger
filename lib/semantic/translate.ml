@@ -167,7 +167,7 @@ module Make (Platf : Platform.S) = struct
       | Const n ->
         if n <> 0 then fun t _ -> Jump (Name t, [t])
         else fun _ f -> Jump (Name f, [f])
-      | _ -> fun t f -> Cjump (Eq, e, Const 0, t, f))
+      | _ -> fun t f -> Cjump (Ne, e, Const 0, t, f))
     | Stmt _ -> Utils.Exn.unreachable ()
     | Cond c -> c
 
@@ -213,7 +213,7 @@ module Make (Platf : Platform.S) = struct
 
   let nil = Expr (Const 0)
 
-  let unit = Stmt (Ir.Expr (Ir.Const 0))
+  let unit = Expr (Ir.Const 0)
 
   let unary op rand =
     if Errors.has_errors () then
@@ -459,14 +459,19 @@ module Make (Platf : Platform.S) = struct
         Label break;
       ])
 
-  (* TODO: stdlib函数和自定义函数的调用方式不同？ *)
+  (* TODO: stdlib函数和自定义函数的调用方式不同？stdlib函数没有static link *)
   let call ~fun_level ~use_level name args : ir =
     if Errors.has_errors () then
       error
     else
-      let def_level = Option.value_exn (fun_level.parent) in
-      let open Ir in
-      Expr (Call (Name name, build_static_links ~def_level ~use_level :: List.map args ~f:to_expr))
+      match fun_level.parent with
+      | None -> (* stdlib function *)
+        let open Ir in
+        Expr (Call (Name name, List.map args ~f:to_expr))
+      | Some def_level ->
+        let static_links = build_static_links ~def_level ~use_level in
+        let open Ir in
+        Expr (Call (Name name, static_links :: List.map args ~f:to_expr))
 
   let let' ~inits ~body : ir =
     if Errors.has_errors () then

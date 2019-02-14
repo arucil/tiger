@@ -90,11 +90,28 @@ Fragments:
 let test_translator =
   let alloc_array = Symbol.sym "alloc_array" in
   let alloc_record = Symbol.sym "alloc_record" in
+  let compare_str = Symbol.sym "compare_str" in
+  let concat = Symbol.sym "concat" in
+  let print = Symbol.sym "print" in
+  let t2 = Temp.temp_of_int 2 in
+  let t4 = Temp.temp_of_int 4 in
+  let t5 = Temp.temp_of_int 5 in
+  let t6 = Temp.temp_of_int 6 in
+  let t7 = Temp.temp_of_int 7 in
+  let t30 = Temp.temp_of_int 30 in
   let t100 = Temp.temp_of_int 100 in
+  let t101 = Temp.temp_of_int 101 in
+  let t102 = Temp.temp_of_int 102 in
+  let t103 = Temp.temp_of_int 103 in
+  let t104 = Temp.temp_of_int 104 in
   let _L0 = Temp.named_label "_L0" in
   let _L1 = Temp.named_label "_L1" in
   let _L2 = Temp.named_label "_L2" in
   let _L3 = Temp.named_label "_L3" in
+  let _L4 = Temp.named_label "_L4" in
+  let _L5 = Temp.named_label "_L5" in
+  let _L6 = Temp.named_label "_L6" in
+  let _L7 = Temp.named_label "_L7" in
 
   "Test Translator" >::: [
 
@@ -175,12 +192,451 @@ let test_translator =
         "string" >:: (fun _ ->
           assert_ok
             {|("what" <= "abc") + ("a" = "g")|}
-            (Ir.Expr (Ir.Const 0))
+            (Ir.Expr
+   (Ir.Binop (Ir.Add,
+      (Ir.Eseq (
+         (Ir.Seq ((Ir.Move ((Ir.Temp t101), (Ir.Const 1))),
+            (Ir.Seq (
+               (Ir.Cjump (Ir.Le,
+                  (Ir.Call ((Ir.Name compare_str),
+                     [(Ir.Name _L0); (Ir.Name _L1)])),
+                  (Ir.Const 0), _L6, _L7)),
+               (Ir.Seq ((Ir.Label _L7),
+                  (Ir.Seq ((Ir.Move ((Ir.Temp t101), (Ir.Const 0))),
+                     (Ir.Label _L6)))
+                  ))
+               ))
+            )),
+         (Ir.Temp t101))),
+      (Ir.Eseq (
+         (Ir.Seq ((Ir.Move ((Ir.Temp t100), (Ir.Const 1))),
+            (Ir.Seq (
+               (Ir.Cjump (Ir.Eq,
+                  (Ir.Call ((Ir.Name compare_str),
+                     [(Ir.Name _L2); (Ir.Name _L3)])),
+                  (Ir.Const 0), _L4, _L5)),
+               (Ir.Seq ((Ir.Label _L5),
+                  (Ir.Seq ((Ir.Move ((Ir.Temp t100), (Ir.Const 0))),
+                     (Ir.Label _L4)))
+                  ))
+               ))
+            )),
+         (Ir.Temp t100)))
+      )))
             [(_L0, S "what");
              (_L1, S "abc");
              (_L2, S "a");
              (_L3, S "g")]);
-      ]
+
+        "array" >:: (fun _ ->
+          assert_ok
+            {|let type a = array of int var t := a[3] of 0 in t <> a[0] of 30 end|}
+            (Ir.Seq (
+   (Ir.Move ((Ir.Temp t100),
+      (Ir.Call ((Ir.Name alloc_array), [(Ir.Const 3); (Ir.Const 0)])))),
+   (Ir.Seq (
+      (Ir.Cjump (Ir.Ne, (Ir.Temp t100),
+         (Ir.Call ((Ir.Name alloc_array), [(Ir.Const 0); (Ir.Const 30)])),
+         _L0, _L0)),
+      (Ir.Label _L0)))
+   ))
+            []);
+      ];
+
+      "init var and/or" >:: (fun _ ->
+        assert_ok
+          {|let var a := 3 & (2 <> 1) | -1 in end|}
+          (Ir.Seq (
+   (Ir.Move ((Ir.Temp t100),
+      (Ir.Eseq (
+         (Ir.Seq ((Ir.Move ((Ir.Temp t101), (Ir.Const 1))),
+            (Ir.Seq (
+               (Ir.Seq (
+                  (Ir.Seq ((Ir.Jump ((Ir.Name _L0), [_L0])),
+                     (Ir.Seq ((Ir.Label _L0),
+                        (Ir.Cjump (Ir.Ne, (Ir.Const 2), (Ir.Const 1), _L2,
+                           _L1))
+                        ))
+                     )),
+                  (Ir.Seq ((Ir.Label _L1),
+                     (Ir.Cjump (Ir.Ne, (Ir.Unop (Ir.Neg, (Ir.Const 1))),
+                        (Ir.Const 0), _L2, _L3))
+                     ))
+                  )),
+               (Ir.Seq ((Ir.Label _L3),
+                  (Ir.Seq ((Ir.Move ((Ir.Temp t101), (Ir.Const 0))),
+                     (Ir.Label _L2)))
+                  ))
+               ))
+            )),
+         (Ir.Temp t101)))
+      )),
+   (Ir.Expr (Ir.Const 0))))
+          []);
+
+      "and/or" >:: (fun _ ->
+        assert_ok
+          {|0 & (2 <> 1) | -1|}
+          (Ir.Seq (
+   (Ir.Seq (
+      (Ir.Seq ((Ir.Jump ((Ir.Name _L1), [_L1])),
+         (Ir.Seq ((Ir.Label _L0),
+            (Ir.Cjump (Ir.Ne, (Ir.Const 2), (Ir.Const 1), _L2, _L1))))
+         )),
+      (Ir.Seq ((Ir.Label _L1),
+         (Ir.Cjump (Ir.Ne, (Ir.Unop (Ir.Neg, (Ir.Const 1))), (Ir.Const 0),
+            _L2, _L2))
+         ))
+      )),
+   (Ir.Label _L2)))
+          []);
+
+      "variable" >:: (fun _ ->
+        assert_ok
+          {|let var a := 123 in a end|}
+          (Ir.Seq ((Ir.Move ((Ir.Temp t100), (Ir.Const 123))), (Ir.Expr (Ir.Temp t100))
+   ))
+          []);
+
+      "index" >:: (fun _ ->
+        assert_ok
+          {|let type a = array of int var t := a[0] of -1 in t[20] end|}
+          (Ir.Seq (
+   (Ir.Move ((Ir.Temp t100),
+      (Ir.Call ((Ir.Name alloc_array),
+         [(Ir.Const 0); (Ir.Unop (Ir.Neg, (Ir.Const 1)))]))
+      )),
+   (Ir.Expr
+      (Ir.Mem
+         (Ir.Binop (Ir.Add, (Ir.Temp t100),
+            (Ir.Binop (Ir.Mul, (Ir.Const 20), (Ir.Const 4)))))))
+   ))
+          []);
+
+      "field selection" >:: (fun _ ->
+        assert_ok
+          {|let type r1 = { bar:int,baz:string} var t : r1 := nil in t.baz end|}
+          (Ir.Seq ((Ir.Move ((Ir.Temp t100), (Ir.Const 0))),
+   (Ir.Expr
+      (Ir.Mem
+         (Ir.Binop (Ir.Add, (Ir.Temp t100),
+            (Ir.Binop (Ir.Mul, (Ir.Const 1), (Ir.Const 4)))))))
+   ))
+          []);
+
+      "index and field selection" >:: (fun _ ->
+        assert_ok
+          {|
+let
+  type a1 = array of int
+  type r1 = { bar : a1 }
+  type a2 = array of r1
+  type r2 = { foo : a2 }
+  var a : r2 := nil
+in
+  a.foo[2 + 3].bar
+end
+          |}
+          (Ir.Seq ((Ir.Move ((Ir.Temp t100), (Ir.Const 0))),
+   (Ir.Expr
+      (Ir.Mem
+         (Ir.Binop (Ir.Add,
+            (Ir.Mem
+               (Ir.Binop (Ir.Add,
+                  (Ir.Mem
+                     (Ir.Binop (Ir.Add, (Ir.Temp t100),
+                        (Ir.Binop (Ir.Mul, (Ir.Const 0), (Ir.Const 4)))))),
+                  (Ir.Binop (Ir.Mul,
+                     (Ir.Binop (Ir.Add, (Ir.Const 2), (Ir.Const 3))),
+                     (Ir.Const 4)))
+                  ))),
+            (Ir.Binop (Ir.Mul, (Ir.Const 0), (Ir.Const 4)))))))
+   ))
+          []);
+
+      "assignment" >::: [
+        "int" >:: (fun _ ->
+          assert_ok
+            {|let var t := 20 in t := 27 end|}
+            (Ir.Seq ((Ir.Move ((Ir.Temp t100), (Ir.Const 20))),
+   (Ir.Move ((Ir.Temp t100), (Ir.Const 27)))))
+            []);
+
+        "index" >:: (fun _ ->
+          assert_ok
+            {|let type a = array of int var t := a[0] of 0 in t[2] := 7 end|}
+            (Ir.Seq (
+   (Ir.Move ((Ir.Temp t100),
+      (Ir.Call ((Ir.Name alloc_array), [(Ir.Const 0); (Ir.Const 0)])))),
+   (Ir.Move (
+      (Ir.Mem
+         (Ir.Binop (Ir.Add, (Ir.Temp t100),
+            (Ir.Binop (Ir.Mul, (Ir.Const 2), (Ir.Const 4)))))),
+      (Ir.Const 7)))))
+            []);
+
+        "field" >:: (fun _ ->
+          assert_ok
+            {|let type r = { foo:string, bar:int } var t : r := nil in t.bar := 20 end |}
+            (Ir.Seq ((Ir.Move ((Ir.Temp t100), (Ir.Const 0))),
+   (Ir.Move (
+      (Ir.Mem
+         (Ir.Binop (Ir.Add, (Ir.Temp t100),
+            (Ir.Binop (Ir.Mul, (Ir.Const 1), (Ir.Const 4)))))),
+      (Ir.Const 20)))
+   ))
+            []);
+      ];
+
+      "record creation" >:: (fun _ ->
+        assert_ok
+          {|
+let
+  type r = { a : int, b : string, c : int }
+in
+  r { a=20,b="abc",c=1007 }
+end
+          |}
+          (Ir.Expr
+   (Ir.Eseq (
+      (Ir.Seq (
+         (Ir.Move ((Ir.Temp t100),
+            (Ir.Call ((Ir.Name alloc_record), [(Ir.Const 12)])))),
+         (Ir.Seq (
+            (Ir.Move (
+               (Ir.Mem (Ir.Binop (Ir.Add, (Ir.Temp t100), (Ir.Const 0)))),
+               (Ir.Const 20))),
+            (Ir.Seq (
+               (Ir.Move (
+                  (Ir.Mem (Ir.Binop (Ir.Add, (Ir.Temp t100), (Ir.Const 4)))),
+                  (Ir.Name _L0))),
+               (Ir.Move (
+                  (Ir.Mem (Ir.Binop (Ir.Add, (Ir.Temp t100), (Ir.Const 8)))),
+                  (Ir.Const 1007)))
+               )))))),
+      (Ir.Temp t100))))
+          [(_L0, S "abc")]);
+
+      "if" >::: [
+        "if-then-else" >:: (fun _ ->
+          assert_ok
+            {|if 2 > 3 then 1 else 30|}
+            (Ir.Expr
+   (Ir.Eseq (
+      (Ir.Seq ((Ir.Cjump (Ir.Gt, (Ir.Const 2), (Ir.Const 3), _L0, _L1)),
+         (Ir.Seq ((Ir.Label _L0),
+            (Ir.Seq ((Ir.Move ((Ir.Temp t100), (Ir.Const 1))),
+               (Ir.Seq ((Ir.Jump ((Ir.Name _L2), [_L2])),
+                  (Ir.Seq ((Ir.Label _L1),
+                     (Ir.Seq ((Ir.Move ((Ir.Temp t100), (Ir.Const 30))),
+                        (Ir.Label _L2)))
+                     ))
+                  ))
+               ))
+            ))
+         )),
+      (Ir.Temp t100))))
+            []);
+
+        "if-then" >:: (fun _ ->
+          assert_ok
+            {|let var a := 3 in if a > 2 then a := 30 end|}
+            (Ir.Seq ((Ir.Move ((Ir.Temp t100), (Ir.Const 3))),
+   (Ir.Seq ((Ir.Cjump (Ir.Gt, (Ir.Temp t100), (Ir.Const 2), _L0, _L1)),
+      (Ir.Seq ((Ir.Label _L0),
+         (Ir.Seq ((Ir.Move ((Ir.Temp t100), (Ir.Const 30))),
+            (Ir.Seq ((Ir.Jump ((Ir.Name _L2), [_L2])),
+               (Ir.Seq ((Ir.Label _L1),
+                  (Ir.Seq ((Ir.Expr (Ir.Const 0)), (Ir.Label _L2)))))))))))))))
+            []);
+
+        "if-int" >:: (fun _ ->
+          assert_ok
+            {|if 3 + 2 then 27 else 22*3|}
+            (Ir.Expr
+   (Ir.Eseq (
+      (Ir.Seq (
+         (Ir.Cjump (Ir.Ne, (Ir.Binop (Ir.Add, (Ir.Const 3), (Ir.Const 2))),
+            (Ir.Const 0), _L0, _L1)),
+         (Ir.Seq ((Ir.Label _L0),
+            (Ir.Seq ((Ir.Move ((Ir.Temp t100), (Ir.Const 27))),
+               (Ir.Seq ((Ir.Jump ((Ir.Name _L2), [_L2])),
+                  (Ir.Seq ((Ir.Label _L1),
+                     (Ir.Seq (
+                        (Ir.Move ((Ir.Temp t100),
+                           (Ir.Binop (Ir.Mul, (Ir.Const 22), (Ir.Const 3))))),
+                        (Ir.Label _L2))))))))))))),
+      (Ir.Temp t100))))
+            []);
+      ];
+
+      "function call" >::: [
+
+        "less than 4 params" >:: (fun _ ->
+          assert_ok
+            {|
+let
+  function foo(x : int, y : string): string = y
+in
+  concat("a", foo(3, "hy"))
+end
+            |}
+            (Ir.Expr
+   (Ir.Call ((Ir.Name concat),
+      [(Ir.Name _L1);
+        (Ir.Call ((Ir.Name _L0), [(Ir.Temp t30); (Ir.Const 3); (Ir.Name _L2)]
+           ))])))
+          [(_L0, F (Ir.Seq (
+            (Ir.Move ((Ir.Mem (Ir.Binop (Ir.Add, (Ir.Temp t30), (Ir.Const (-4))))),
+               (Ir.Temp t4))),
+            (Ir.Seq ((Ir.Move ((Ir.Temp t100), (Ir.Temp t5))),
+               (Ir.Seq ((Ir.Move ((Ir.Temp t101), (Ir.Temp t6))),
+                  (Ir.Move ((Ir.Temp t2), (Ir.Temp t101)))))
+               ))
+            )));
+            (_L1, S "a");
+            (_L2, S "hy")]);
+
+        "more than 4 params" >:: (fun _ ->
+          assert_ok
+            {|
+let
+  function foo(x:int,y:int,z:int,w:string,u:int) = ()
+in
+  foo(1,2,3,"",4)
+end
+            |}
+            (Ir.Expr
+   (Ir.Call ((Ir.Name _L0),
+      [(Ir.Temp t30); (Ir.Const 1); (Ir.Const 2); (Ir.Const 3);
+        (Ir.Name _L1); (Ir.Const 4)]
+      )))
+            [(_L0,
+              F (Ir.Seq (
+                (Ir.Move ((Ir.Mem (Ir.Binop (Ir.Add, (Ir.Temp t30), (Ir.Const (-4))))),
+                   (Ir.Temp t4))),
+                (Ir.Seq ((Ir.Move ((Ir.Temp t100), (Ir.Temp t5))),
+                   (Ir.Seq ((Ir.Move ((Ir.Temp t101), (Ir.Temp t6))),
+                      (Ir.Seq ((Ir.Move ((Ir.Temp t102), (Ir.Temp t7))),
+                         (Ir.Seq (
+                            (Ir.Move ((Ir.Temp t103),
+                               (Ir.Binop (Ir.Add, (Ir.Temp t30), (Ir.Const 0))))),
+                            (Ir.Seq (
+                               (Ir.Move ((Ir.Temp t104),
+                                  (Ir.Binop (Ir.Add, (Ir.Temp t30), (Ir.Const 4))))),
+                               (Ir.Move ((Ir.Temp t2), (Ir.Const 0)))))
+                            ))
+                         ))
+                      ))
+                   ))
+                )));
+             (_L1, S "")]);
+      ];
+
+      "while loop" >:: (fun _ ->
+        assert_ok
+          {|let var i := 2 in while i<10 do i := i+1 end|}
+          (Ir.Seq ((Ir.Move ((Ir.Temp t100), (Ir.Const 2))),
+   (Ir.Seq ((Ir.Label _L1),
+      (Ir.Seq ((Ir.Cjump (Ir.Lt, (Ir.Temp t100), (Ir.Const 10), _L2, _L0)),
+         (Ir.Seq ((Ir.Label _L2),
+            (Ir.Seq (
+               (Ir.Move ((Ir.Temp t100),
+                  (Ir.Binop (Ir.Add, (Ir.Temp t100), (Ir.Const 1))))),
+               (Ir.Seq ((Ir.Jump ((Ir.Name _L1), [_L1])), (Ir.Label _L0)))))
+            ))
+         ))
+      ))
+   ))
+          []);
+
+      "for loop" >:: (fun _ ->
+        assert_ok
+          {|for i := 1 to 10 do print("")|}
+          (Ir.Seq ((Ir.Move ((Ir.Temp t100), (Ir.Const 1))),
+   (Ir.Seq ((Ir.Move ((Ir.Temp t101), (Ir.Const 10))),
+      (Ir.Seq ((Ir.Label _L3),
+         (Ir.Seq (
+            (Ir.Cjump (Ir.Le, (Ir.Temp t100), (Ir.Temp t101), _L2, _L0)),
+            (Ir.Seq ((Ir.Label _L2),
+               (Ir.Seq (
+                  (Ir.Expr (Ir.Call ((Ir.Name print), [(Ir.Name _L1)]))),
+                  (Ir.Seq (
+                     (Ir.Move ((Ir.Temp t100),
+                        (Ir.Binop (Ir.Add, (Ir.Temp t100), (Ir.Const 1))))),
+                     (Ir.Seq ((Ir.Jump ((Ir.Name _L3), [_L3])),
+                        (Ir.Label _L0)))
+                     ))
+                  ))
+               ))
+            ))
+         ))
+      ))
+   ))
+          [(_L1, S "")]);
+
+      "break in while loop" >:: (fun _ ->
+        assert_ok
+          {|while 1 do if 3 > 2 then break|}
+          (Ir.Seq ((Ir.Label _L4),
+   (Ir.Seq ((Ir.Jump ((Ir.Name _L5), [_L5])),
+      (Ir.Seq ((Ir.Label _L5),
+         (Ir.Seq (
+            (Ir.Seq (
+               (Ir.Cjump (Ir.Gt, (Ir.Const 3), (Ir.Const 2), _L1, _L2)),
+               (Ir.Seq ((Ir.Label _L1),
+                  (Ir.Seq ((Ir.Jump ((Ir.Name _L0), [_L0])),
+                     (Ir.Seq ((Ir.Jump ((Ir.Name _L3), [_L3])),
+                        (Ir.Seq ((Ir.Label _L2),
+                           (Ir.Seq ((Ir.Expr (Ir.Const 0)), (Ir.Label _L3)))
+                           ))
+                        ))
+                     ))
+                  ))
+               )),
+            (Ir.Seq ((Ir.Jump ((Ir.Name _L4), [_L4])), (Ir.Label _L0)))))
+         ))
+      ))
+   ))
+          []);
+
+      "break in for loop" >:: (fun _ ->
+        assert_ok
+          {|for i := 1 to 5 do if i = 2 then break|}
+          (Ir.Seq ((Ir.Move ((Ir.Temp t100), (Ir.Const 1))),
+   (Ir.Seq ((Ir.Move ((Ir.Temp t101), (Ir.Const 5))),
+      (Ir.Seq ((Ir.Label _L5),
+         (Ir.Seq (
+            (Ir.Cjump (Ir.Le, (Ir.Temp t100), (Ir.Temp t101), _L4, _L0)),
+            (Ir.Seq ((Ir.Label _L4),
+               (Ir.Seq (
+                  (Ir.Seq (
+                     (Ir.Cjump (Ir.Eq, (Ir.Temp t100), (Ir.Const 2), _L1, _L2
+                        )),
+                     (Ir.Seq ((Ir.Label _L1),
+                        (Ir.Seq ((Ir.Jump ((Ir.Name _L0), [_L0])),
+                           (Ir.Seq ((Ir.Jump ((Ir.Name _L3), [_L3])),
+                              (Ir.Seq ((Ir.Label _L2),
+                                 (Ir.Seq ((Ir.Expr (Ir.Const 0)),
+                                    (Ir.Label _L3)))
+                                 ))
+                              ))
+                           ))
+                        ))
+                     )),
+                  (Ir.Seq (
+                     (Ir.Move ((Ir.Temp t100),
+                        (Ir.Binop (Ir.Add, (Ir.Temp t100), (Ir.Const 1))))),
+                     (Ir.Seq ((Ir.Jump ((Ir.Name _L5), [_L5])),
+                        (Ir.Label _L0)))
+                     ))
+                  ))
+               ))
+            ))
+         ))
+      ))
+   ))
+          []);
     ]
   ]
 
