@@ -27,7 +27,9 @@ module type S = sig
 
   val word_size : int
 
-  type fragment
+  type fragment =
+    | Fun of Frame.t * Ir.stmt
+    | Str of Temp.label * string
 
   val string_lit : Temp.label -> string -> fragment
 

@@ -5,6 +5,7 @@ open Parse
 open Semantic
 open Stdio
 
+module Trans = Translate.Make(Dummy_platf)
 
 let run_analyzer s =
   let temp_file = Caml.Filename.temp_file "tiger_semantic_" "" in
@@ -12,7 +13,7 @@ let run_analyzer s =
   Errors.set_out oc;
   Errors.set_source_name "-";
   let expr = Parser.prog Lexer.get_token (Lexing.from_string s) in
-  let (ty, _) = Analyzer.trans_prog (module Dummy_platf) expr in
+  let (ty, _) = Analyzer.trans_prog (module Trans) expr in
   Out_channel.close oc;
   let errors = In_channel.read_all temp_file in
   (ty, errors)

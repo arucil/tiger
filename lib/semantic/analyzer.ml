@@ -9,8 +9,8 @@ let trans_prog' (module Trans : Translate.S) (expr : Ast.expr) =
 
   Trans.set_temp_store temp_store;
 
-  let rec trans_expr (level : Trans.level) (break : Temp.label option) (env : Env.t) (expr : Ast.expr) : Type.t * Semantic.Translate.ir =
-    let rec trexpr ((pos, expr) : Ast.expr) : Type.t * Semantic.Translate.ir =
+  let rec trans_expr (level : Trans.level) (break : Temp.label option) (env : Env.t) (expr : Ast.expr) : Type.t * Translate.ir =
+    let rec trexpr ((pos, expr) : Ast.expr) : Type.t * Translate.ir =
       let open Ast in
       match expr with
       | IntExpr n -> (Type.IntType, Trans.int n)
@@ -563,6 +563,6 @@ let trans_prog' (module Trans : Translate.S) (expr : Ast.expr) =
   in
     trans_expr Trans.outermost None Env.predefined expr
 
-let trans_prog (module Platf : Platform.S) (expr : Ast.expr) : Type.t * Translate.ir =
+let trans_prog (module Trans : Translate.S) (expr : Ast.expr) : Type.t * Translate.ir =
   Find_escape.find_escape expr;
-  trans_prog' (module Translate.Make(Platf)) expr
+  trans_prog' (module Trans) expr

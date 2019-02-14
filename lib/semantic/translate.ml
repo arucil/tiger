@@ -68,12 +68,14 @@ module type S = sig
 
   val fun' : level -> ir -> unit
 
-  val get_fragments : unit -> fragment list
+  val fragments : unit -> fragment list
 
 end
 
 
 (* TODO: Exercise 6.5 eliminate unnecessary static links *)
+(* TODO: floating-point numbers *)
+(* TODO: value of non-word-size *)
 
 module Make (Platf : Platform.S) = struct
 
@@ -126,7 +128,7 @@ module Make (Platf : Platform.S) = struct
     (level, Platf.Frame.new_local level.frame escape !temp_store)
 
 
-  let fragments : Platf.fragment list ref = ref []
+  let fragment_list : Platf.fragment list ref = ref []
 
 
   let to_expr (ir : ir) : Ir.expr =
@@ -204,7 +206,7 @@ module Make (Platf : Platform.S) = struct
     else
       let label = Temp.new_label !temp_store in
       let frag = Platf.string_lit label s in
-      fragments := !fragments @ [frag];
+      fragment_list := !fragment_list @ [frag];
       Expr (Ir.Name label)
 
   let nil = Expr (Const 0)
@@ -481,8 +483,8 @@ module Make (Platf : Platform.S) = struct
     let body = Ir.Move (Ir.Temp Platf.rv, to_expr body) in
     let body = Platf.Frame.view_shift level.frame body in
     let frag = Platf.fun' level.frame body in
-    fragments := !fragments @ [frag]
+    fragment_list := !fragment_list @ [frag]
 
-  let get_fragments () = !fragments
+  let fragments () = !fragment_list
 
 end

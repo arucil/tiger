@@ -65,7 +65,7 @@ module type S = sig
 
   val fun' : level -> ir -> unit
 
-  val get_fragments : unit -> fragment list
+  val fragments : unit -> fragment list
 
 end
 
