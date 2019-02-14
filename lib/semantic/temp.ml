@@ -29,7 +29,7 @@ let temp_of_int n = n
 let new_label store =
   let i = store.label_counter in
   store.label_counter <- i + 1;
-  Symbol.sym ("L" ^ Int.to_string i)
+  Symbol.sym ("_L" ^ Int.to_string i)
 
 let new_labels n store =
   List.init n ~f:(fun _ -> new_label store)

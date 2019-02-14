@@ -11,6 +11,8 @@ module type S = sig
 
   val set_temp_store : Temp.temp_store -> unit
 
+  val to_stmt : ir -> Ir.stmt
+
   val outermost : level
 
   val new_level : level -> Temp.label -> bool list -> level
@@ -69,4 +71,4 @@ module type S = sig
 
 end
 
-module Make : functor (Platf : Platform.S) -> S
+module Make : functor (Platf : Platform.S) -> S with type fragment = Platf.fragment

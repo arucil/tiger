@@ -139,7 +139,12 @@ let trans_prog' (module Trans : Translate.S) (expr : Ast.expr) =
             Type.IntType
           end)
         in
-        let ir = Trans.binary op lhs_ir rhs_ir in
+        let ir =
+          if Type.(lhs_ty = Type.StringType && rhs_ty = Type.StringType) then
+            Trans.str_binary op lhs_ir rhs_ir
+          else
+            Trans.binary op lhs_ir rhs_ir
+        in
           (ty, ir)
 
     and opstr : Ast.op -> string = function
@@ -561,8 +566,9 @@ let trans_prog' (module Trans : Translate.S) (expr : Ast.expr) =
       trexpr expr
 
   in
-    trans_expr Trans.outermost None Env.predefined expr
+  let (ty, ir) = trans_expr Trans.outermost None Env.predefined expr in
+  (ty, Trans.to_stmt ir)
 
-let trans_prog (module Trans : Translate.S) (expr : Ast.expr) : Type.t * Translate.ir =
+let trans_prog (module Trans : Translate.S) (expr : Ast.expr) : Type.t * Ir.stmt =
   Find_escape.find_escape expr;
   trans_prog' (module Trans) expr

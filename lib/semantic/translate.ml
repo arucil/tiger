@@ -14,6 +14,8 @@ module type S = sig
 
   val set_temp_store : Temp.temp_store -> unit
 
+  val to_stmt : ir -> Ir.stmt
+
   val outermost : level
 
   val new_level : level -> Temp.label -> bool list -> level
@@ -396,7 +398,7 @@ module Make (Platf : Platform.S) = struct
       let open Ir in
       Expr (Eseq (
         seq (
-          Move (Temp r, Platf.external_call "alloc_record" [Const (List.length fields)])
+          Move (Temp r, Platf.external_call "alloc_record" [Const (List.length fields * Platf.word_size)])
           ::
           List.mapi fields
             ~f:(fun i field ->

@@ -5,22 +5,21 @@ open Parse
 open Semantic
 open Stdio
 
-module Trans = Translate.Make(Dummy_platf)
-
 let run_analyzer s =
   let temp_file = Caml.Filename.temp_file "tiger_semantic_" "" in
   let oc = Out_channel.create ~append:false temp_file in
   Errors.set_out oc;
   Errors.set_source_name "-";
   let expr = Parser.prog Lexer.get_token (Lexing.from_string s) in
-  let (ty, _) = Analyzer.trans_prog (module Trans) expr in
+  let trans = (module Translate.Make(Dummy_platf) : Translate.S) in
+  let (ty, _) = Analyzer.trans_prog trans expr in
   Out_channel.close oc;
   let errors = In_channel.read_all temp_file in
   (ty, errors)
 
 let assert_ok (src : string) (expected_ty : Type.t) =
   let (actual_ty, actual_errors) = run_analyzer src in
-  if Poly.(actual_errors = "") && Type.eq_ignore_unique actual_ty expected_ty then
+  if String.(actual_errors = "") && Type.eq_ignore_unique actual_ty expected_ty then
     ()
   else
     assert_failure
@@ -42,7 +41,7 @@ errors:
 let assert_error (src : string) (expected_errors : string) =
   let expected_errors = String.lstrip expected_errors in
   let (actual_ty, actual_errors) = run_analyzer src in
-  if Poly.(actual_errors = expected_errors) then
+  if String.(actual_errors = expected_errors) then
     ()
   else
     assert_failure
@@ -61,7 +60,7 @@ errors:
          (Type.show actual_ty)
          actual_errors)
 
-let test_semantic =
+let test_typecheck =
   let dummy_unique = Type.new_unique (Type.new_unique_store ()) in
   "Test Typechecker" >::: [
 
@@ -662,4 +661,4 @@ end
   ]
 
 let () =
-  run_test_tt_main test_semantic
+  run_test_tt_main test_typecheck
