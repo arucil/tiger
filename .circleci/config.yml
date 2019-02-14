@@ -12,9 +12,11 @@ jobs:
           name: Build the executable
           command: |
             eval $(opam env)
+            dune clean
             dune build bin/tiger.exe
       - run:
           name: Test
           command: |
             eval $(opam env)
+            dune clean
             dune runtest
