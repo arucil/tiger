@@ -40,6 +40,8 @@ module type S = sig
 
   val unit : ir
 
+  val seq : ir list -> ir
+
   val unary : Ast.uop -> ir -> ir
 
   val binary : Ast.op -> ir -> ir -> ir
@@ -173,14 +175,14 @@ module Make (Platf : Platform.S) = struct
 
   let error = Expr (Ir.Const 0)
 
-  let simple_var use_level (def_level, access) =
+  let simple_var use_level (def_level, access) : ir =
     if Errors.has_errors () then
       error
     else
       Expr (Platf.access_expr access (build_static_links ~def_level ~use_level))
   
   (* TODO: emit code that check nil *)
-  let field_var ~record sym fields =
+  let field_var ~record sym fields : ir =
     if Errors.has_errors () then
       error
     else
@@ -188,10 +190,13 @@ module Make (Platf : Platform.S) = struct
         ~f:(fun (sym', _) -> Symbol.(=) sym sym')
       in
       let open Ir in
-      Expr (Mem (Binop (Add, to_expr record, Binop (Mul, Const i, Const Platf.word_size))))
+      if i = 0 then
+        Expr (Mem (to_expr record))
+      else
+        Expr (Mem (Binop (Add, to_expr record, Const (i * Platf.word_size))))
 
   (* TODO: emit code that check out-of-bound *)
-  let index_var ~array ~index =
+  let index_var ~array ~index : ir =
     if Errors.has_errors () then
       error
     else
@@ -214,6 +219,11 @@ module Make (Platf : Platform.S) = struct
   let nil = Expr (Const 0)
 
   let unit = Expr (Ir.Const 0)
+
+  let seq irs =
+    let init = List.take irs (List.length irs - 1) |> List.map ~f:to_stmt in
+    let last = List.last_exn irs |> to_expr in
+    Expr (Ir.Eseq (Ir.seq init, last))
 
   let unary op rand =
     if Errors.has_errors () then
@@ -477,7 +487,14 @@ module Make (Platf : Platform.S) = struct
     if Errors.has_errors () then
       error
     else
-      Stmt (Ir.seq (List.map (inits @ [body]) ~f:to_stmt))
+      let open Ir in
+      if List.is_empty inits then
+        body
+      else
+        Expr (Eseq (
+          seq (List.map inits ~f:to_stmt),
+          to_expr body
+        ))
 
   let init_var (_, access) init : ir =
     if Errors.has_errors () then

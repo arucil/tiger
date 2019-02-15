@@ -23,7 +23,8 @@ let trans_prog' (module Trans : Translate.S) (expr : Ast.expr) =
         if List.is_empty exprs then
           (Type.UnitType, Trans.unit)
         else
-          List.map ~f:trexpr exprs |> List.last_exn
+          let (tys, irs) = List.unzip (List.map exprs ~f:trexpr) in
+          (List.last_exn tys, Trans.seq irs)
       | AssignExpr { var; expr } -> trassign pos var expr
       | RecordExpr { ty; fields } -> trrecord pos ty fields
       | ArrayExpr { ty; size; init } -> trarray pos ty size init

@@ -37,6 +37,8 @@ module type S = sig
 
   val unit : ir
 
+  val seq : ir list -> ir
+
   val unary : Ast.uop -> ir -> ir
 
   val binary : Ast.op -> ir -> ir -> ir
