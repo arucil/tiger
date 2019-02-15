@@ -4,7 +4,7 @@ module type S = sig
 
   type access
 
-  val access_expr : access -> Ir.expr -> Ir.expr
+  val access_expr : access -> Ir.expr -> Ir.lval
 
   module Frame : sig
     type t

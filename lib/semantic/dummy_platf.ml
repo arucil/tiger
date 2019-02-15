@@ -14,7 +14,8 @@ let access_expr access base =
   | InFrame offset ->
     let open Ir in
     Mem (Binop (Add, base, Const (offset)))
-  | InReg reg -> Temp reg
+  | InReg reg ->
+    Temp reg
 
 let word_size = 4
 
@@ -47,11 +48,11 @@ module Frame = struct
         ~f:(fun i escape ->
           let src =
             if i < Array.length reg_params then
-              Ir.Temp (reg_params.(i))
+              Ir.Lval (Ir.Temp (reg_params.(i)))
             else
               let open Ir in
               (* fp 已经更新,指向arguments底部 *)
-              Binop (Add, Temp fp, Const ((i - Array.length reg_params) * word_size))
+              Binop (Add, Lval (Temp fp), Const ((i - Array.length reg_params) * word_size))
           in
           let dest =
             if escape then
@@ -62,7 +63,7 @@ module Frame = struct
               InReg (Temp.new_temp temp_store)
           in
           entry_view_shift := !entry_view_shift
-            @ [Ir.Move (access_expr dest (Ir.Temp fp), src)];
+            @ [Ir.Move (access_expr dest (Lval (Ir.Temp fp)), src)];
           dest)
     in
     {

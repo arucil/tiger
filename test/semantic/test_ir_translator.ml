@@ -167,10 +167,10 @@ let test_translator =
          (Ir.Move ((Ir.Temp t100),
             (Ir.Call ((Ir.Name alloc_record), [(Ir.Const 4)])))),
          (Ir.Move (
-            (Ir.Mem (Ir.Binop (Ir.Add, (Ir.Temp t100), (Ir.Const 0)))),
+            (Ir.Mem (Ir.Binop (Ir.Add, (Ir.Lval (Ir.Temp t100)), (Ir.Const 0)))),
             (Ir.Const 20)))
          )),
-      (Ir.Temp t100))))
+      (Ir.Lval (Ir.Temp t100)))))
           []);
     ];
 
@@ -219,7 +219,7 @@ let test_translator =
                   ))
                ))
             )),
-         (Ir.Temp t101))),
+         Ir.Lval (Ir.Temp t101))),
       (Ir.Eseq (
          (Ir.Seq ((Ir.Move ((Ir.Temp t100), (Ir.Const 1))),
             (Ir.Seq (
@@ -233,7 +233,7 @@ let test_translator =
                   ))
                ))
             )),
-         (Ir.Temp t100)))
+         Ir.Lval (Ir.Temp t100)))
       )))
             [(_L0, S "what");
              (_L1, S "abc");
@@ -250,7 +250,7 @@ let test_translator =
       (Ir.Eseq (
          (Ir.Seq ((Ir.Move ((Ir.Temp t101), (Ir.Const 1))),
             (Ir.Seq (
-               (Ir.Cjump (Ir.Ne, (Ir.Temp t100),
+               (Ir.Cjump (Ir.Ne, Ir.Lval (Ir.Temp t100),
                   (Ir.Call ((Ir.Name alloc_array),
                      [(Ir.Const 0); (Ir.Const 30)])),
                   _L0, _L1)),
@@ -260,7 +260,7 @@ let test_translator =
                   ))
                ))
             )),
-         (Ir.Temp t101)))
+         Ir.Lval (Ir.Temp t101)))
       )))
             []);
       ];
@@ -294,7 +294,7 @@ let test_translator =
                      ))
                   ))
                )),
-            (Ir.Temp t101)))
+            Ir.Lval (Ir.Temp t101)))
          )),
       (Ir.Const 0))))
         []);
@@ -319,7 +319,7 @@ let test_translator =
     "variable" >:: (fun _ ->
       assert_ok
         {|let var a := 123 in a end|}
-        (Ir.Expr (Ir.Eseq ((Ir.Move ((Ir.Temp t100), (Ir.Const 123))), Ir.Temp t100)))
+        (Ir.Expr (Ir.Eseq ((Ir.Move ((Ir.Temp t100), (Ir.Const 123))), Ir.Lval (Ir.Temp t100))))
         []);
 
     "index" >:: (fun _ ->
@@ -331,9 +331,9 @@ let test_translator =
          (Ir.Call ((Ir.Name alloc_array),
             [(Ir.Const 0); (Ir.Unop (Ir.Neg, (Ir.Const 1)))]))
          )),
-      (Ir.Mem
-         (Ir.Binop (Ir.Add, (Ir.Temp t100),
-            (Ir.Binop (Ir.Mul, (Ir.Const 20), (Ir.Const 4))))))
+      (Ir.Lval (Ir.Mem
+         (Ir.Binop (Ir.Add, Ir.Lval (Ir.Temp t100),
+            (Ir.Binop (Ir.Mul, (Ir.Const 20), (Ir.Const 4)))))))
       )))
         []);
 
@@ -342,7 +342,7 @@ let test_translator =
         {|let type r1 = { bar:int,baz:string} var t : r1 := nil in t.baz end|}
         (Ir.Expr
    (Ir.Eseq ((Ir.Move ((Ir.Temp t100), (Ir.Const 0))),
-      (Ir.Mem (Ir.Binop (Ir.Add, (Ir.Temp t100), (Ir.Const 4)))))))
+      (Ir.Lval (Ir.Mem (Ir.Binop (Ir.Add, Ir.Lval (Ir.Temp t100), (Ir.Const 4))))))))
         []);
 
     "index and field selection" >:: (fun _ ->
@@ -360,13 +360,13 @@ end
         |}
         (Ir.Expr
    (Ir.Eseq ((Ir.Move ((Ir.Temp t100), (Ir.Const 0))),
-      (Ir.Mem
-         (Ir.Mem
-            (Ir.Binop (Ir.Add, (Ir.Mem (Ir.Temp t100)),
+      (Ir.Lval (Ir.Mem
+         (Ir.Lval (Ir.Mem
+            (Ir.Binop (Ir.Add, Ir.Lval (Ir.Mem (Ir.Lval (Ir.Temp t100))),
                (Ir.Binop (Ir.Mul,
                   (Ir.Binop (Ir.Add, (Ir.Const 2), (Ir.Const 3))),
                   (Ir.Const 4)))
-               ))))
+               ))))))
       )))
         []);
 
@@ -390,7 +390,7 @@ end
             (Ir.Eseq (
                (Ir.Seq ((Ir.Move ((Ir.Temp t100), (Ir.Const 29))),
                   (Ir.Move ((Ir.Temp t101), (Ir.Name _L1))))),
-               (Ir.Binop (Ir.Add, (Ir.Temp t100), (Ir.Const 2)))))),
+               (Ir.Binop (Ir.Add, (Ir.Lval (Ir.Temp t100)), (Ir.Const 2)))))),
          (Ir.Eseq ((Ir.Expr (Ir.Binop (Ir.Add, (Ir.Const 2), (Ir.Const 2)))),
             (Ir.Const 0)))
          ))
@@ -417,7 +417,7 @@ end
       (Ir.Eseq (
          (Ir.Move (
             (Ir.Mem
-               (Ir.Binop (Ir.Add, (Ir.Temp t100),
+               (Ir.Binop (Ir.Add, Ir.Lval (Ir.Temp t100),
                   (Ir.Binop (Ir.Mul, (Ir.Const 2), (Ir.Const 4)))))),
             (Ir.Const 7))),
          (Ir.Const 0)))
@@ -431,7 +431,7 @@ end
    (Ir.Eseq ((Ir.Move ((Ir.Temp t100), (Ir.Const 0))),
       (Ir.Eseq (
          (Ir.Move (
-            (Ir.Mem (Ir.Binop (Ir.Add, (Ir.Temp t100), (Ir.Const 4)))),
+            (Ir.Mem (Ir.Binop (Ir.Add, Ir.Lval (Ir.Temp t100), (Ir.Const 4)))),
             (Ir.Const 20))),
          (Ir.Const 0)))
       )))
@@ -454,17 +454,17 @@ end
             (Ir.Call ((Ir.Name alloc_record), [(Ir.Const 12)])))),
          (Ir.Seq (
             (Ir.Move (
-               (Ir.Mem (Ir.Binop (Ir.Add, (Ir.Temp t100), (Ir.Const 0)))),
+               (Ir.Mem (Ir.Binop (Ir.Add, Ir.Lval (Ir.Temp t100), (Ir.Const 0)))),
                (Ir.Const 20))),
             (Ir.Seq (
                (Ir.Move (
-                  (Ir.Mem (Ir.Binop (Ir.Add, (Ir.Temp t100), (Ir.Const 4)))),
+                  (Ir.Mem (Ir.Binop (Ir.Add, Ir.Lval (Ir.Temp t100), (Ir.Const 4)))),
                   (Ir.Name _L0))),
                (Ir.Move (
-                  (Ir.Mem (Ir.Binop (Ir.Add, (Ir.Temp t100), (Ir.Const 8)))),
+                  (Ir.Mem (Ir.Binop (Ir.Add, Ir.Lval (Ir.Temp t100), (Ir.Const 8)))),
                   (Ir.Const 1007)))
                )))))),
-      (Ir.Temp t100))))
+      Ir.Lval (Ir.Temp t100))))
         [(_L0, S "abc")]);
 
     "if" >::: [
@@ -485,7 +485,7 @@ end
                ))
             ))
          )),
-      (Ir.Temp t100))))
+      Ir.Lval (Ir.Temp t100))))
           []);
 
       "if-then" >:: (fun _ ->
@@ -494,7 +494,7 @@ end
           (Ir.Expr
    (Ir.Eseq ((Ir.Move ((Ir.Temp t100), (Ir.Const 3))),
       (Ir.Eseq (
-         (Ir.Seq ((Ir.Cjump (Ir.Gt, (Ir.Temp t100), (Ir.Const 2), _L0, _L1)),
+         (Ir.Seq ((Ir.Cjump (Ir.Gt, Ir.Lval (Ir.Temp t100), (Ir.Const 2), _L0, _L1)),
             (Ir.Seq ((Ir.Label _L0),
                (Ir.Seq ((Ir.Move ((Ir.Temp t100), (Ir.Const 30))),
                   (Ir.Seq ((Ir.Jump ((Ir.Name _L2), [_L2])),
@@ -524,7 +524,7 @@ end
                         (Ir.Move ((Ir.Temp t100),
                            (Ir.Binop (Ir.Mul, (Ir.Const 22), (Ir.Const 3))))),
                         (Ir.Label _L2))))))))))))),
-      (Ir.Temp t100))))
+      Ir.Lval (Ir.Temp t100))))
           []);
     ];
 
@@ -542,14 +542,14 @@ end
           (Ir.Expr
    (Ir.Call ((Ir.Name concat),
       [(Ir.Name _L1);
-        (Ir.Call ((Ir.Name _L0), [(Ir.Temp t30); (Ir.Const 3); (Ir.Name _L2)]
+        (Ir.Call ((Ir.Name _L0), [Ir.Lval (Ir.Temp t30); (Ir.Const 3); (Ir.Name _L2)]
            ))])))
         [(_L0, F (Ir.Seq (
-         (Ir.Move ((Ir.Mem (Ir.Binop (Ir.Add, (Ir.Temp t30), (Ir.Const (-4))))),
-            (Ir.Temp t4))),
-         (Ir.Seq ((Ir.Move ((Ir.Temp t100), (Ir.Temp t5))),
-            (Ir.Seq ((Ir.Move ((Ir.Temp t101), (Ir.Temp t6))),
-               (Ir.Move ((Ir.Temp t2), (Ir.Temp t101)))))
+         (Ir.Move ((Ir.Mem (Ir.Binop (Ir.Add, Ir.Lval (Ir.Temp t30), (Ir.Const (-4))))),
+            Ir.Lval (Ir.Temp t4))),
+         (Ir.Seq ((Ir.Move ((Ir.Temp t100), Ir.Lval (Ir.Temp t5))),
+            (Ir.Seq ((Ir.Move ((Ir.Temp t101), Ir.Lval (Ir.Temp t6))),
+               (Ir.Move ((Ir.Temp t2), Ir.Lval (Ir.Temp t101)))))
             ))
          )));
          (_L1, S "a");
@@ -566,22 +566,22 @@ end
           |}
           (Ir.Expr
    (Ir.Call ((Ir.Name _L0),
-      [(Ir.Temp t30); (Ir.Const 1); (Ir.Const 2); (Ir.Const 3);
+      [Ir.Lval (Ir.Temp t30); (Ir.Const 1); (Ir.Const 2); (Ir.Const 3);
         (Ir.Name _L1); (Ir.Const 4)]
       )))
           [(_L0,
             F (Ir.Seq (
-                (Ir.Move ((Ir.Mem (Ir.Binop (Ir.Add, (Ir.Temp t30), (Ir.Const (-4))))),
-                   (Ir.Temp t4))),
-                (Ir.Seq ((Ir.Move ((Ir.Temp t100), (Ir.Temp t5))),
-                   (Ir.Seq ((Ir.Move ((Ir.Temp t101), (Ir.Temp t6))),
-                      (Ir.Seq ((Ir.Move ((Ir.Temp t102), (Ir.Temp t7))),
+                (Ir.Move ((Ir.Mem (Ir.Binop (Ir.Add, Ir.Lval (Ir.Temp t30), (Ir.Const (-4))))),
+                   Ir.Lval (Ir.Temp t4))),
+                (Ir.Seq ((Ir.Move ((Ir.Temp t100), Ir.Lval (Ir.Temp t5))),
+                   (Ir.Seq ((Ir.Move ((Ir.Temp t101), Ir.Lval (Ir.Temp t6))),
+                      (Ir.Seq ((Ir.Move ((Ir.Temp t102), Ir.Lval (Ir.Temp t7))),
                          (Ir.Seq (
                             (Ir.Move ((Ir.Temp t103),
-                               (Ir.Binop (Ir.Add, (Ir.Temp t30), (Ir.Const 0))))),
+                               (Ir.Binop (Ir.Add, Ir.Lval (Ir.Temp t30), (Ir.Const 0))))),
                             (Ir.Seq (
                                (Ir.Move ((Ir.Temp t104),
-                                  (Ir.Binop (Ir.Add, (Ir.Temp t30), (Ir.Const 4))))),
+                                  (Ir.Binop (Ir.Add, Ir.Lval (Ir.Temp t30), (Ir.Const 4))))),
                                (Ir.Move ((Ir.Temp t2), (Ir.Const 0)))))
                             ))
                          ))
@@ -599,11 +599,11 @@ end
       (Ir.Eseq (
          (Ir.Seq ((Ir.Label _L1),
             (Ir.Seq (
-               (Ir.Cjump (Ir.Lt, (Ir.Temp t100), (Ir.Const 10), _L2, _L0)),
+               (Ir.Cjump (Ir.Lt, Ir.Lval (Ir.Temp t100), (Ir.Const 10), _L2, _L0)),
                (Ir.Seq ((Ir.Label _L2),
                   (Ir.Seq (
                      (Ir.Move ((Ir.Temp t100),
-                        (Ir.Binop (Ir.Add, (Ir.Temp t100), (Ir.Const 1))))),
+                        (Ir.Binop (Ir.Add, Ir.Lval (Ir.Temp t100), (Ir.Const 1))))),
                      (Ir.Seq ((Ir.Jump ((Ir.Name _L1), [_L1])),
                         (Ir.Label _L0)))
                      ))
@@ -621,13 +621,13 @@ end
    (Ir.Seq ((Ir.Move ((Ir.Temp t101), (Ir.Const 10))),
       (Ir.Seq ((Ir.Label _L3),
          (Ir.Seq (
-            (Ir.Cjump (Ir.Le, (Ir.Temp t100), (Ir.Temp t101), _L2, _L0)),
+            (Ir.Cjump (Ir.Le, Ir.Lval (Ir.Temp t100), Ir.Lval (Ir.Temp t101), _L2, _L0)),
             (Ir.Seq ((Ir.Label _L2),
                (Ir.Seq (
                   (Ir.Expr (Ir.Call ((Ir.Name print), [(Ir.Name _L1)]))),
                   (Ir.Seq (
                      (Ir.Move ((Ir.Temp t100),
-                        (Ir.Binop (Ir.Add, (Ir.Temp t100), (Ir.Const 1))))),
+                        (Ir.Binop (Ir.Add, Ir.Lval (Ir.Temp t100), (Ir.Const 1))))),
                      (Ir.Seq ((Ir.Jump ((Ir.Name _L3), [_L3])),
                         (Ir.Label _L0)))
                      ))
@@ -671,11 +671,11 @@ end
    (Ir.Seq ((Ir.Move ((Ir.Temp t101), (Ir.Const 5))),
       (Ir.Seq ((Ir.Label _L5),
          (Ir.Seq (
-            (Ir.Cjump (Ir.Le, (Ir.Temp t100), (Ir.Temp t101), _L4, _L0)),
+            (Ir.Cjump (Ir.Le, Ir.Lval (Ir.Temp t100), Ir.Lval (Ir.Temp t101), _L4, _L0)),
             (Ir.Seq ((Ir.Label _L4),
                (Ir.Seq (
                   (Ir.Seq (
-                     (Ir.Cjump (Ir.Eq, (Ir.Temp t100), (Ir.Const 2), _L1, _L2
+                     (Ir.Cjump (Ir.Eq, Ir.Lval (Ir.Temp t100), (Ir.Const 2), _L1, _L2
                         )),
                      (Ir.Seq ((Ir.Label _L1),
                         (Ir.Seq ((Ir.Jump ((Ir.Name _L0), [_L0])),
@@ -690,7 +690,7 @@ end
                      )),
                   (Ir.Seq (
                      (Ir.Move ((Ir.Temp t100),
-                        (Ir.Binop (Ir.Add, (Ir.Temp t100), (Ir.Const 1))))),
+                        (Ir.Binop (Ir.Add, Ir.Lval (Ir.Temp t100), (Ir.Const 1))))),
                      (Ir.Seq ((Ir.Jump ((Ir.Name _L5), [_L5])),
                         (Ir.Label _L0)))
                      ))
@@ -715,23 +715,23 @@ end
           |}
           (Ir.Expr
    (Ir.Eseq (
-      (Ir.Move ((Ir.Mem (Ir.Binop (Ir.Add, (Ir.Temp t30), (Ir.Const (-4))))),
+      (Ir.Move ((Ir.Mem (Ir.Binop (Ir.Add, Ir.Lval (Ir.Temp t30), (Ir.Const (-4))))),
          (Ir.Const 20))),
-      (Ir.Call ((Ir.Name _L0), [(Ir.Temp t30); (Ir.Const 1); (Ir.Const 2)]))
+      (Ir.Call ((Ir.Name _L0), [Ir.Lval (Ir.Temp t30); (Ir.Const 1); (Ir.Const 2)]))
       )))
           [(_L0, F (Ir.Seq (
-            (Ir.Move ((Ir.Mem (Ir.Binop (Ir.Add, (Ir.Temp t30), (Ir.Const (-4))))),
-               (Ir.Temp t4))),
-            (Ir.Seq ((Ir.Move ((Ir.Temp t100), (Ir.Temp t5))),
-               (Ir.Seq ((Ir.Move ((Ir.Temp t101), (Ir.Temp t6))),
+            (Ir.Move ((Ir.Mem (Ir.Binop (Ir.Add, Ir.Lval (Ir.Temp t30), (Ir.Const (-4))))),
+               Ir.Lval (Ir.Temp t4))),
+            (Ir.Seq ((Ir.Move ((Ir.Temp t100), Ir.Lval (Ir.Temp t5))),
+               (Ir.Seq ((Ir.Move ((Ir.Temp t101), Ir.Lval (Ir.Temp t6))),
                   (Ir.Move ((Ir.Temp t2),
                      (Ir.Binop (Ir.Add,
-                        (Ir.Mem
+                        (Ir.Lval (Ir.Mem
                            (Ir.Binop (Ir.Add,
-                              (Ir.Mem
-                                 (Ir.Binop (Ir.Add, (Ir.Temp t30), (Ir.Const (-4))))),
-                              (Ir.Const (-4))))),
-                        (Ir.Temp t100)))
+                              (Ir.Lval (Ir.Mem
+                                 (Ir.Binop (Ir.Add, Ir.Lval (Ir.Temp t30), (Ir.Const (-4)))))),
+                              (Ir.Const (-4)))))),
+                        Ir.Lval (Ir.Temp t100)))
                      ))
                   ))
                ))
@@ -753,40 +753,40 @@ end
           |}
           (Ir.Expr
    (Ir.Eseq (
-      (Ir.Move ((Ir.Mem (Ir.Binop (Ir.Add, (Ir.Temp t30), (Ir.Const (-4))))),
+      (Ir.Move ((Ir.Mem (Ir.Binop (Ir.Add, Ir.Lval (Ir.Temp t30), (Ir.Const (-4))))),
          (Ir.Const 37))),
       (Ir.Const 0))))
           [(_L0, F (Ir.Seq (
-            (Ir.Move ((Ir.Mem (Ir.Binop (Ir.Add, (Ir.Temp t30), (Ir.Const (-4))))),
-               (Ir.Temp t4))),
-            (Ir.Seq ((Ir.Move ((Ir.Temp t100), (Ir.Temp t5))),
-               (Ir.Seq ((Ir.Move ((Ir.Temp t101), (Ir.Temp t6))),
+            (Ir.Move ((Ir.Mem (Ir.Binop (Ir.Add, Ir.Lval (Ir.Temp t30), (Ir.Const (-4))))),
+               Ir.Lval (Ir.Temp t4))),
+            (Ir.Seq ((Ir.Move ((Ir.Temp t100), Ir.Lval (Ir.Temp t5))),
+               (Ir.Seq ((Ir.Move ((Ir.Temp t101), Ir.Lval (Ir.Temp t6))),
                   (Ir.Move ((Ir.Temp t2),
                      (Ir.Binop (Ir.Add,
                         (Ir.Call ((Ir.Name _L0),
-                           [(Ir.Mem (Ir.Binop (Ir.Add, (Ir.Temp t30), (Ir.Const (-4)))));
+                           [Ir.Lval (Ir.Mem (Ir.Binop (Ir.Add, Ir.Lval (Ir.Temp t30), (Ir.Const (-4)))));
                              (Ir.Const 1); (Ir.Const 2)]
                            )),
-                        (Ir.Call ((Ir.Name _L1), [(Ir.Temp t30); (Ir.Const 3)]))))
+                        (Ir.Call ((Ir.Name _L1), [Ir.Lval (Ir.Temp t30); (Ir.Const 3)]))))
                      ))
                   ))
                ))
             )));
            (_L1, F (Ir.Seq (
-            (Ir.Move ((Ir.Mem (Ir.Binop (Ir.Add, (Ir.Temp t30), (Ir.Const (-4))))),
-               (Ir.Temp t4))),
-            (Ir.Seq ((Ir.Move ((Ir.Temp t102), (Ir.Temp t5))),
+            (Ir.Move ((Ir.Mem (Ir.Binop (Ir.Add, Ir.Lval (Ir.Temp t30), (Ir.Const (-4))))),
+               Ir.Lval (Ir.Temp t4))),
+            (Ir.Seq ((Ir.Move ((Ir.Temp t102), Ir.Lval (Ir.Temp t5))),
                (Ir.Move ((Ir.Temp t2),
                   (Ir.Binop (Ir.Sub,
-                     (Ir.Mem
+                     (Ir.Lval (Ir.Mem
                         (Ir.Binop (Ir.Add,
-                           (Ir.Mem
+                           (Ir.Lval (Ir.Mem
                               (Ir.Binop (Ir.Add,
-                                 (Ir.Mem
-                                    (Ir.Binop (Ir.Add, (Ir.Temp t30), (Ir.Const (-4))))),
-                                 (Ir.Const (-4))))),
-                           (Ir.Const (-4))))),
-                     (Ir.Temp t102)))
+                                 (Ir.Lval (Ir.Mem
+                                    (Ir.Binop (Ir.Add, Ir.Lval (Ir.Temp t30), (Ir.Const (-4)))))),
+                                 (Ir.Const (-4)))))),
+                           (Ir.Const (-4)))))),
+                     Ir.Lval (Ir.Temp t102)))
                   ))
                ))
             )))]);
@@ -808,32 +808,32 @@ end
           |}
           (Ir.Expr
    (Ir.Eseq (
-      (Ir.Move ((Ir.Mem (Ir.Binop (Ir.Add, (Ir.Temp t30), (Ir.Const (-4))))),
+      (Ir.Move ((Ir.Mem (Ir.Binop (Ir.Add, Ir.Lval (Ir.Temp t30), (Ir.Const (-4))))),
          (Ir.Const 20))),
       (Ir.Eseq (
          (Ir.Seq (
             (Ir.Move (
-               (Ir.Mem (Ir.Binop (Ir.Add, (Ir.Temp t30), (Ir.Const (-8))))),
+               (Ir.Mem (Ir.Binop (Ir.Add, Ir.Lval (Ir.Temp t30), (Ir.Const (-8))))),
                (Ir.Const 1))),
             (Ir.Seq (
                (Ir.Move ((Ir.Temp t101),
-                  (Ir.Mem (Ir.Binop (Ir.Add, (Ir.Temp t30), (Ir.Const (-4)))))
+                  (Ir.Lval (Ir.Mem (Ir.Binop (Ir.Add, Ir.Lval (Ir.Temp t30), (Ir.Const (-4))))))
                   )),
                (Ir.Seq ((Ir.Label _L3),
                   (Ir.Seq (
                      (Ir.Cjump (Ir.Le,
-                        (Ir.Mem
-                           (Ir.Binop (Ir.Add, (Ir.Temp t30), (Ir.Const (-8))))),
-                        (Ir.Temp t101), _L2, _L0)),
+                        (Ir.Lval (Ir.Mem
+                           (Ir.Binop (Ir.Add, Ir.Lval (Ir.Temp t30), (Ir.Const (-8)))))),
+                        Ir.Lval (Ir.Temp t101), _L2, _L0)),
                      (Ir.Seq ((Ir.Label _L2),
                         (Ir.Seq (
                            (Ir.Expr
                               (Ir.Eseq (
                                  (Ir.Expr
                                     (Ir.Call ((Ir.Name _L1),
-                                       [(Ir.Temp t30);
-                                         (Ir.Mem
-                                            (Ir.Binop (Ir.Add, (Ir.Temp t30),
+                                       [Ir.Lval (Ir.Temp t30);
+                                         Ir.Lval (Ir.Mem
+                                            (Ir.Binop (Ir.Add, Ir.Lval (Ir.Temp t30),
                                                (Ir.Const (-8)))))
                                          ]
                                        ))),
@@ -841,12 +841,12 @@ end
                            (Ir.Seq (
                               (Ir.Move (
                                  (Ir.Mem
-                                    (Ir.Binop (Ir.Add, (Ir.Temp t30),
+                                    (Ir.Binop (Ir.Add, Ir.Lval (Ir.Temp t30),
                                        (Ir.Const (-8))))),
                                  (Ir.Binop (Ir.Add,
-                                    (Ir.Mem
-                                       (Ir.Binop (Ir.Add, (Ir.Temp t30),
-                                          (Ir.Const (-8))))),
+                                    (Ir.Lval (Ir.Mem
+                                       (Ir.Binop (Ir.Add, Ir.Lval (Ir.Temp t30),
+                                          (Ir.Const (-8)))))),
                                     (Ir.Const 1)))
                                  )),
                               (Ir.Seq ((Ir.Jump ((Ir.Name _L3), [_L3])),
@@ -861,19 +861,19 @@ end
          (Ir.Const 0)))
       )))
           [(_L1, F (Ir.Seq (
-            (Ir.Move ((Ir.Mem (Ir.Binop (Ir.Add, (Ir.Temp t30), (Ir.Const (-4))))),
-               (Ir.Temp t4))),
-            (Ir.Seq ((Ir.Move ((Ir.Temp t100), (Ir.Temp t5))),
+            (Ir.Move ((Ir.Mem (Ir.Binop (Ir.Add, Ir.Lval (Ir.Temp t30), (Ir.Const (-4))))),
+               Ir.Lval (Ir.Temp t4))),
+            (Ir.Seq ((Ir.Move ((Ir.Temp t100), Ir.Lval (Ir.Temp t5))),
                (Ir.Move ((Ir.Temp t2),
                   (Ir.Binop (Ir.Add,
-                     (Ir.Mem
+                     (Ir.Lval (Ir.Mem
                         (Ir.Binop (Ir.Add,
-                           (Ir.Mem (Ir.Binop (Ir.Add, (Ir.Temp t30), (Ir.Const (-4))))),
-                           (Ir.Const (-4))))),
-                     (Ir.Mem
+                           (Ir.Lval (Ir.Mem (Ir.Binop (Ir.Add, Ir.Lval (Ir.Temp t30), (Ir.Const (-4)))))),
+                           (Ir.Const (-4)))))),
+                     (Ir.Lval (Ir.Mem
                         (Ir.Binop (Ir.Add,
-                           (Ir.Mem (Ir.Binop (Ir.Add, (Ir.Temp t30), (Ir.Const (-4))))),
-                           (Ir.Const (-8)))))
+                           (Ir.Lval (Ir.Mem (Ir.Binop (Ir.Add, Ir.Lval (Ir.Temp t30), (Ir.Const (-4)))))),
+                           (Ir.Const (-8))))))
                      ))
                   ))
                ))

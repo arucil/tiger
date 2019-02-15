@@ -5,16 +5,20 @@ module Format = Caml.Format
 type expr =
   | Const of int
   | Name of Temp.label
-  | Temp of Temp.temp
   | Binop of binop * expr * expr
   | Unop of unop * expr
-  | Mem of expr
   | Call of expr * expr list
   | Eseq of stmt * expr
+  | Lval of lval
+  [@@deriving show]
+
+and lval =
+  | Temp of Temp.temp
+  | Mem of expr
   [@@deriving show]
 
 and stmt =
-  | Move of expr * expr
+  | Move of lval * expr
   | Expr of expr
   | Jump of expr * Temp.label list
   | Cjump of relop * expr * expr * Temp.label * Temp.label

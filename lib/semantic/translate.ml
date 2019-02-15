@@ -124,9 +124,9 @@ module Make (Platf : Platform.S) = struct
         expr
       else
         go (Option.value_exn level.parent)
-          (Platf.access_expr (static_link level) expr)
+          (Ir.Lval (Platf.access_expr (static_link level) expr))
     in
-      go use_level (Temp Platf.fp)
+      go use_level (Lval (Temp Platf.fp))
 
   let new_local level escape =
     (level, Platf.Frame.new_local level.frame escape !temp_store)
@@ -152,7 +152,7 @@ module Make (Platf : Platform.S) = struct
           Move (Temp r, Const 0);
           Label t;
         ],
-        Temp r)
+        Lval (Temp r))
 
   let to_stmt (ir : ir) : Ir.stmt =
     match ir with
@@ -179,7 +179,8 @@ module Make (Platf : Platform.S) = struct
     if Errors.has_errors () then
       error
     else
-      Expr (Platf.access_expr access (build_static_links ~def_level ~use_level))
+      let open Ir in
+      Expr (Lval (Platf.access_expr access (build_static_links ~def_level ~use_level)))
   
   (* TODO: emit code that check nil *)
   let field_var ~record sym fields : ir =
@@ -191,9 +192,9 @@ module Make (Platf : Platform.S) = struct
       in
       let open Ir in
       if i = 0 then
-        Expr (Mem (to_expr record))
+        Expr (Lval (Mem (to_expr record)))
       else
-        Expr (Mem (Binop (Add, to_expr record, Const (i * Platf.word_size))))
+        Expr (Lval (Mem (Binop (Add, to_expr record, Const (i * Platf.word_size)))))
 
   (* TODO: emit code that check out-of-bound *)
   let index_var ~array ~index : ir =
@@ -201,7 +202,9 @@ module Make (Platf : Platform.S) = struct
       error
     else
       let open Ir in
-      Expr (Mem (Binop (Add, to_expr array, Binop (Mul, to_expr index, Const Platf.word_size))))
+      Expr (Lval (Mem (Binop (Add,
+        to_expr array,
+        Binop (Mul, to_expr index, Const Platf.word_size)))))
 
   let int n : ir =
     let open Ir in
@@ -309,7 +312,9 @@ module Make (Platf : Platform.S) = struct
       error
     else
       let open Ir in
-      Stmt (Move (to_expr var, to_expr expr))
+      match to_expr var with
+      | Lval lval -> Stmt (Move (lval, to_expr expr))
+      | _ -> Utils.Exn.unreachable ()
 
   (* if two branches are both statements, no temp is need to store the results
   *)
@@ -397,7 +402,7 @@ module Make (Platf : Platform.S) = struct
             Move (Temp r, to_expr alt);
             Label z;
           ],
-          Temp r
+          Lval (Temp r)
         ))
 
   let record fields : ir =
@@ -413,10 +418,10 @@ module Make (Platf : Platform.S) = struct
           List.mapi fields
             ~f:(fun i field ->
               Move (
-                Mem (Binop (Add, Temp r, Const (i * Platf.word_size))),
+                Mem (Binop (Add, Lval (Temp r), Const (i * Platf.word_size))),
                 to_expr field))
         ),
-        Temp r
+        Lval (Temp r)
       ))
 
   let array ~size ~init : ir =
@@ -452,7 +457,7 @@ module Make (Platf : Platform.S) = struct
     if Errors.has_errors () then 
       error
     else
-      let i = Platf.access_expr access (Temp Platf.fp) in
+      let i = Platf.access_expr access (Ir.Lval (Ir.Temp Platf.fp)) in
       let limit = Ir.Temp (Temp.new_temp !temp_store) in
       let t = Temp.new_label !temp_store in
       let test = Temp.new_label !temp_store in
@@ -461,10 +466,10 @@ module Make (Platf : Platform.S) = struct
         Move (i, to_expr low);
         Move (limit, to_expr high);
         Label test;
-        Cjump (Le, i, limit, t, break);
+        Cjump (Le, Lval i, Lval limit, t, break);
         Label t;
         to_stmt body;
-        Move (i, Binop (Add, i, Const 1));
+        Move (i, Binop (Add, Lval i, Const 1));
         Jump (Name test, [test]);
         Label break;
       ])
@@ -501,7 +506,7 @@ module Make (Platf : Platform.S) = struct
       error
     else
       let open Ir in
-      Stmt (Move (Platf.access_expr access (Temp Platf.fp), to_expr init))
+      Stmt (Move (Platf.access_expr access (Lval (Temp Platf.fp)), to_expr init))
 
   let fun' level body =
     let body = Ir.Move (Ir.Temp Platf.rv, to_expr body) in
