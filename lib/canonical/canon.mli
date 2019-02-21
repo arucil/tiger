@@ -1,3 +1,3 @@
 open Semantic
 
-val linearize : Ir.stmt -> Ir.stmt list
+val linearize : Ir.stmt -> Temp.temp_store -> Ir.stmt list
