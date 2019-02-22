@@ -10,6 +10,7 @@ let linearize stmt temp_store =
     | _ -> Seq (s1, s2)
   in
 
+  (* TODO: more powerful commutivity test *)
   let commute s e =
     match s, e with
     | Expr (Const _ | Name _), _ -> true
@@ -120,8 +121,61 @@ let basic_blocks stmts temp_store =
     | [] -> List.rev blocks
     | Label _ as stmt :: stmts' ->
       build_block stmts' [stmt]
-    | stmt :: stmts' ->
+    | _ :: _ ->
       let label = Temp.new_label temp_store in
       build_block stmts [Label label]
   in
-    build_blocks stmts []
+    (build_blocks stmts [], done_label)
+
+let trace_schedule blocks done_label temp_store =
+  let rec gather_traces table = function
+    | (Label label :: _) as block :: blocks ->
+      (match Symtab.find table label with
+       | None -> gather_traces table blocks
+       | Some _ -> gather_trace table block blocks)
+    | [] -> []
+    | _ -> Utils.Exn.unreachable ()
+
+  and gather_trace table block blocks =
+    let table =
+      Symtab.remove table
+        (match block with
+         | Label l :: _ -> l
+         | _ -> Utils.Exn.unreachable ())
+    in
+    match List.last_exn block with
+    | Jump (Name l, _) ->
+      begin
+        match Symtab.find table l with
+        | None ->
+          block @ gather_traces table blocks
+        | Some ((Label l :: _) as b) ->
+          Utils.List.init_exn block
+            @ gather_trace table b blocks
+        | _ ->
+          Utils.Exn.unreachable ()
+      end
+    | Cjump (op, l, r, t, f) ->
+      begin
+        match Symtab.find table t, Symtab.find table f with
+        | _, Some b ->
+          block @ gather_trace table b blocks
+        | Some b, _ ->
+          Utils.List.init_exn block
+            @ [Cjump (op, r, l, f, t)]
+            @ gather_trace table b blocks
+        | None, None ->
+          let t = Temp.new_label temp_store in
+          f
+      end
+    | _ ->
+      Utils.Exn.unreachable ()
+
+  in
+  let newentry table block =
+    match block with
+    | Label label :: _ -> Symtab.extend table label block
+    | _ -> Utils.Exn.unreachable ()
+
+  in
+    gather_traces (List.fold blocks ~init:Symtab.empty ~f:newentry) blocks @ [Label done_label]

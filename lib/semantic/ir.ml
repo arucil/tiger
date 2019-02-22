@@ -47,3 +47,15 @@ let rec seq : stmt list -> stmt = function
   | [stmt] -> stmt
   | (stmt :: stmts) ->
     Seq (stmt, seq stmts)
+
+let negate_relop = function
+  | Eq -> Ne
+  | Ne -> Eq
+  | Lt -> Ge
+  | Le -> Gt
+  | Gt -> Le
+  | Ge -> Lt
+  | Ult -> Uge
+  | Ule -> Ugt
+  | Ugt -> Ule
+  | Uge -> Ult

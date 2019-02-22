@@ -17,3 +17,8 @@ val fold3 : 'b list -> 'c list -> 'd list -> init:'a -> f:('a -> 'b -> 'c -> 'd 
 
 (* if not found, return -1 *)
 val find_index : 'a list -> f:('a -> bool) -> int
+
+(* return all elements but the last one *)
+val init_exn : 'a list -> 'a list
+
+val init : 'a list -> 'a list option

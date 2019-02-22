@@ -41,3 +41,16 @@ let find_index xs ~f =
       else go (i + 1) xs
   in
     go 0 xs
+
+let rec init' = function
+  | [] -> Exn.unreachable ()
+  | [_] -> []
+  | x :: xs -> x :: init' xs
+
+let init = function
+  | [] -> None
+  | xs -> Some (init' xs)
+
+let init_exn = function
+  | [] -> raise (Invalid_argument "empty list")
+  | xs -> init' xs
