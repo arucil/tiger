@@ -1,3 +1,4 @@
+open Base
 open Semantic
 open Ir
 
@@ -100,3 +101,27 @@ let linearize stmt temp_store =
     | _ -> stmt :: stmts
   in
     flatten (do_stmt stmt) []
+
+
+let basic_blocks stmts temp_store =
+  let done_label = Temp.new_label temp_store in
+  let rec build_blocks stmts blocks =
+    let rec build_block stmts block =
+      match stmts with
+      | [] -> build_block [Jump (Name done_label, [done_label])] block
+      | (Jump _ | Cjump _ as stmt) :: stmts ->
+        build_blocks stmts (List.rev (stmt :: block) :: blocks)
+      | Label label :: _ ->
+        build_block (Jump (Name label, [label]) :: stmts) block
+      | stmt :: stmts' ->
+        build_block stmts' (stmt :: block)
+    in
+    match stmts with
+    | [] -> List.rev blocks
+    | Label _ as stmt :: stmts' ->
+      build_block stmts' [stmt]
+    | stmt :: stmts' ->
+      let label = Temp.new_label temp_store in
+      build_block stmts [Label label]
+  in
+    build_blocks stmts []
