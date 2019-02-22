@@ -162,11 +162,16 @@ let trace_schedule blocks done_label temp_store =
           block @ gather_trace table b blocks
         | Some b, _ ->
           Utils.List.init_exn block
-            @ [Cjump (op, r, l, f, t)]
+            @ [ Cjump (op, r, l, f, t) ]
             @ gather_trace table b blocks
         | None, None ->
-          let t = Temp.new_label temp_store in
-          f
+          let f' = Temp.new_label temp_store in
+          Utils.List.init_exn block
+            @ [ Cjump (op, l, r, t, f');
+                Label f';
+                Jump (Name f, [f])
+              ]
+            @ gather_traces table blocks
       end
     | _ ->
       Utils.Exn.unreachable ()

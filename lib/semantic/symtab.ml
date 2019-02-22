@@ -12,4 +12,6 @@ let extend_many t =
   List.fold ~init:t
     ~f:(fun t (sym, data) -> extend t sym data)
 
-let find t key = Map.find t key
+let find = Map.find
+
+let remove = Map.remove
