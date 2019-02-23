@@ -26,7 +26,8 @@ let run_translator s =
   Errors.set_source_name "-";
   let expr = Parser.prog Lexer.get_token (Lexing.from_string s) in
   let trans = (module Translate.Make(Dummy_platf) : Translate.S with type fragment = Dummy_platf.fragment) in
-  let (ty, stmt) = Analyzer.trans_prog (module (val trans) : Translate.S) expr in
+  let temp_store = Temp.new_store () in
+  let (ty, stmt) = Analyzer.trans_prog expr (module (val trans) : Translate.S) temp_store in
   let module Trans = (val trans) in
   let frags = List.map (Trans.fragments ())
     ~f:(function

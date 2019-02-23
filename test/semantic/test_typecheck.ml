@@ -12,7 +12,8 @@ let run_analyzer s =
   Errors.set_source_name "-";
   let expr = Parser.prog Lexer.get_token (Lexing.from_string s) in
   let trans = (module Translate.Make(Dummy_platf) : Translate.S) in
-  let (ty, _) = Analyzer.trans_prog trans expr in
+  let temp_store = Temp.new_store () in
+  let (ty, _) = Analyzer.trans_prog expr trans temp_store in
   Out_channel.close oc;
   let errors = In_channel.read_all temp_file in
   (ty, errors)

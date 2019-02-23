@@ -1,8 +1,7 @@
 open Base
 open Parse
 
-let trans_prog' (module Trans : Translate.S) (expr : Ast.expr) =
-  let temp_store = Temp.new_store () in
+let trans_prog' (expr : Ast.expr) (module Trans : Translate.S) temp_store =
   let unique_store = Type.new_unique_store () in
   let new_unique () = Type.new_unique unique_store in
   let module Env = Env.Make (Trans) in
@@ -570,6 +569,6 @@ let trans_prog' (module Trans : Translate.S) (expr : Ast.expr) =
   let (ty, ir) = trans_expr Trans.outermost None Env.predefined expr in
   (ty, Trans.to_stmt ir)
 
-let trans_prog (module Trans : Translate.S) (expr : Ast.expr) : Type.t * Ir.stmt =
+let trans_prog (expr : Ast.expr) (module Trans : Translate.S) temp_store : Type.t * Ir.stmt =
   Find_escape.find_escape expr;
-  trans_prog' (module Trans) expr
+  trans_prog' expr (module Trans) temp_store

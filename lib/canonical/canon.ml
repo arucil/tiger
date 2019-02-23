@@ -149,11 +149,9 @@ let trace_schedule blocks done_label temp_store =
         match Symtab.find table l with
         | None ->
           block @ gather_traces table blocks
-        | Some ((Label l :: _) as b) ->
+        | Some b ->
           Utils.List.init_exn block
             @ gather_trace table b blocks
-        | _ ->
-          Utils.Exn.unreachable ()
       end
     | Cjump (op, l, r, t, f) ->
       begin
