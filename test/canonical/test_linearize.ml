@@ -34,18 +34,18 @@ let run_linearize s =
 let stmt_eq s1 s2 = String.(Ir.show_stmt s1 = Ir.show_stmt s2)
 
 let show_stmts stmts =
-  let rec go buf = function
+  let buf = Buffer.create 10 in
+  let rec go = function
     | [] -> ()
     | s :: ss ->
       begin
         Buffer.add_string buf (Ir.show_stmt s);
         Buffer.add_string buf ";\n";
-        go buf ss;
+        go ss;
       end
   in
-  let buf = Buffer.create 10 in
   Buffer.add_string buf "[\n";
-  go buf stmts;
+  go stmts;
   Buffer.add_string buf "]\n";
   Buffer.contents buf
 
