@@ -156,12 +156,12 @@ let trace_schedule blocks done_label temp_store =
     | Cjump (op, l, r, t, f) ->
       begin
         match Symtab.find table t, Symtab.find table f with
-        | _, Some b ->
-          block @ gather_trace table b blocks
         | Some b, _ ->
           Utils.List.init_exn block
-            @ [ Cjump (op, r, l, f, t) ]
+            @ [ Cjump (Ir.negate_relop op, r, l, f, t) ]
             @ gather_trace table b blocks
+        | _, Some b ->
+          block @ gather_trace table b blocks
         | None, None ->
           let f' = Temp.new_label temp_store in
           Utils.List.init_exn block
