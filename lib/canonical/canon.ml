@@ -127,7 +127,7 @@ let basic_blocks stmts temp_store =
   in
     (build_blocks stmts [], done_label)
 
-let trace_schedule blocks done_label temp_store =
+let trace_schedule blocks done_label _temp_store =
   let rec gather_traces table = function
     | (Label label :: _) as block :: blocks ->
       (match Symtab.find table label with
@@ -158,11 +158,13 @@ let trace_schedule blocks done_label temp_store =
         match Symtab.find table t, Symtab.find table f with
         | Some b, _ ->
           Utils.List.init_exn block
-            @ [ Cjump (Ir.negate_relop op, r, l, f, t) ]
+            @ [ Cjump (Ir.negate_relop op, l, r, f, t) ]
             @ gather_trace table b blocks
         | _, Some b ->
           block @ gather_trace table b blocks
         | None, None ->
+          Utils.Exn.unreachable ()
+          (*
           let f' = Temp.new_label temp_store in
           Utils.List.init_exn block
             @ [ Cjump (op, l, r, t, f');
@@ -170,6 +172,7 @@ let trace_schedule blocks done_label temp_store =
                 Jump (Name f, [f])
               ]
             @ gather_traces table blocks
+            *)
       end
     | _ ->
       Utils.Exn.unreachable ()

@@ -87,8 +87,10 @@ Blocks:
 
 let test_basic_blocks =
   let print = Symbol.sym "print" in
+  let ord = Symbol.sym "ord" in
   let t100 = Temp.temp_of_int 100 in
   let t101 = Temp.temp_of_int 101 in
+  let t102 = Temp.temp_of_int 102 in
   let _L0 = Temp.named_label "_L0" in
   let _L1 = Temp.named_label "_L1" in
   let _L2 = Temp.named_label "_L2" in
@@ -194,6 +196,58 @@ let test_basic_blocks =
   [
     (Ir.Label _L0);
     (Ir.Jump ((Ir.Name _L8), [_L8]));
+  ];
+]
+        );
+
+    "break" >:: (fun _ ->
+      assert_ok
+        {|
+let
+  var a := "a"
+  var i := 20
+in
+  while ord(a) do
+    if i < 10 then
+      i := i + 1
+    else
+      (print(a); break)
+end|}
+[
+  [
+    (Ir.Label _L8);
+    (Ir.Move ((Ir.Temp t100), (Ir.Name _L0)));
+    (Ir.Move ((Ir.Temp t101), (Ir.Const 20)));
+    (Ir.Jump ((Ir.Name _L5), [_L5]));
+  ];
+  [
+    (Ir.Label _L5);
+    (Ir.Move ((Ir.Temp t102),
+   (Ir.Call ((Ir.Name ord), [(Ir.Lval (Ir.Temp t100))]))));
+    (Ir.Cjump (Ir.Ne, (Ir.Lval (Ir.Temp t102)), (Ir.Const 0), _L6, _L1));
+  ];
+  [
+    (Ir.Label _L6);
+    (Ir.Cjump (Ir.Lt, (Ir.Lval (Ir.Temp t101)), (Ir.Const 10), _L2, _L3));
+  ];
+  [
+    (Ir.Label _L2);
+    (Ir.Move ((Ir.Temp t101),
+   (Ir.Binop (Ir.Add, (Ir.Lval (Ir.Temp t101)), (Ir.Const 1)))));
+    (Ir.Jump ((Ir.Name _L4), [_L4]));
+  ];
+  [
+    (Ir.Label _L3);
+    (Ir.Expr (Ir.Call ((Ir.Name print), [(Ir.Lval (Ir.Temp t100))])));
+    (Ir.Jump ((Ir.Name _L1), [_L1]));
+  ];
+  [
+    (Ir.Label _L4);
+    (Ir.Jump ((Ir.Name _L5), [_L5]));
+  ];
+  [
+    (Ir.Label _L1);
+    (Ir.Jump ((Ir.Name _L7), [_L7]));
   ];
 ]
         )
