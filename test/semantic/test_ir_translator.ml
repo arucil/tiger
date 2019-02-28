@@ -27,14 +27,14 @@ let run_translator s =
   Errors.set_out oc;
   Errors.set_source_name "-";
   let expr = Parser.prog Lexer.get_token (Lexing.from_string s) in
-  let trans = (module Translate.Make(Dummy_platf) : Translate.S with type fragment = Dummy_platf.fragment) in
+  let trans = (module Translate.Make(Mips_platf) : Translate.S with type fragment = Mips_platf.fragment) in
   let temp_store = Temp.new_store () in
   let (ty, stmt) = Analyzer.trans_prog expr (module (val trans) : Translate.S) temp_store in
   let module Trans = (val trans) in
   let frags = List.map (Trans.fragments ())
     ~f:(function
       | Fun (frame, stmt) ->
-        (Dummy_platf.Frame.label frame, F stmt)
+        (Mips_platf.Frame.label frame, F stmt)
       | Str (label, str) ->
         (label, S str))
     |> Map.of_alist_exn (module Symbol)

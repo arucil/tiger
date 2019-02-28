@@ -14,7 +14,7 @@ let run_basic_blocks s =
   Errors.set_out oc;
   Errors.set_source_name "-";
   let expr = Parser.prog Lexer.get_token (Lexing.from_string s) in
-  let trans = (module Translate.Make(Dummy_platf) : Translate.S with type fragment = Dummy_platf.fragment) in
+  let trans = (module Translate.Make(Mips_platf) : Translate.S with type fragment = Mips_platf.fragment) in
   let temp_store = Temp.new_store () in
   let (ty, stmt) = Analyzer.trans_prog expr (module (val trans) : Translate.S) temp_store in
   Out_channel.close oc;

@@ -13,7 +13,7 @@ let run_analyzer s =
   Errors.set_out oc;
   Errors.set_source_name "-";
   let expr = Parser.prog Lexer.get_token (Lexing.from_string s) in
-  let trans = (module Translate.Make(Dummy_platf) : Translate.S) in
+  let trans = (module Translate.Make(Mips_platf) : Translate.S) in
   let temp_store = Temp.new_store () in
   let (ty, _) = Analyzer.trans_prog expr trans temp_store in
   Out_channel.close oc;
