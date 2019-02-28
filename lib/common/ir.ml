@@ -28,7 +28,7 @@ and stmt =
 
 and binop =
   | Add | Sub | Mul | Div
-  | And | Or | Lshift | Rshift | Arshift | Xor
+  | And | Or | Xor | Lshift | Rshift | Arshift
   [@@deriving show]
 
 and unop =

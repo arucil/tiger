@@ -1,3 +1,6 @@
+(ocamllex
+  (modules mnemonic_lex))
+
 (library
   (name common)
   (libraries base)

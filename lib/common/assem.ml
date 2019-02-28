@@ -1,5 +1,4 @@
 open Base
-open Common
 
 module Mn = Mnemonic_lex
 
@@ -8,12 +7,12 @@ type mnemonic = Mn.mpart array
 type t =
   | Oper of {
       assem : mnemonic;
-      dest : Temp.temp array;
+      dst : Temp.temp array;
       src : Temp.temp array;
       jumps : Temp.label array
     }
   | Label of { assem : mnemonic; label : Temp.label }
-  | Move of { assem : mnemonic; dest : Temp.temp; src : Temp.temp }
+  | Move of { assem : mnemonic; dst : Temp.temp; src : Temp.temp }
 
 let show_mnemonic m fmt_temp dest src jumps =
   let buf = Buffer.create 10 in
@@ -27,19 +26,22 @@ let show_mnemonic m fmt_temp dest src jumps =
 
 let show t fmt_temp =
   match t with
-  | Oper { assem; dest; src; jumps } ->
-    show_mnemonic assem fmt_temp dest src jumps
+  | Oper { assem; dst; src; jumps } ->
+    show_mnemonic assem fmt_temp dst src jumps
   | Label { assem; label } ->
     show_mnemonic assem fmt_temp [||] [||] [|label|]
-  | Move { assem; dest; src } ->
-    show_mnemonic assem fmt_temp [|dest|] [|src|] [||]
+  | Move { assem; dst; src } ->
+    show_mnemonic assem fmt_temp [|dst|] [|src|] [||]
 
-let make_mnemonic s =
-  let lexbuf = Lexing.from_string s in
-  let rec go () =
-    match Mn.get_part lexbuf with
-    | None -> []
-    | Some p ->
-      p :: go ()
-  in
-    Array.of_list (go ())
+let make_mnemonic fmt =
+  Printf.ksprintf
+    (fun s ->
+      let lexbuf = Lexing.from_string s in
+      let rec go () =
+        match Mn.get_part lexbuf with
+        | None -> []
+        | Some p ->
+          p :: go ()
+      in
+        Array.of_list (go ()))
+    fmt

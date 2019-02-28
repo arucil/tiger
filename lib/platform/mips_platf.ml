@@ -5,21 +5,21 @@ type access =
   | InFrame of int
   | InReg of Temp.temp
 
-let fp = Temp.temp_of_int 30   (* $fp in MIPS *)
+let fp = Temp.temp_of_int 30 (* $fp *)
 
-let rv = Temp.temp_of_int 2    (* $v0 in MIPS *)
+let rv = Temp.temp_of_int 2  (* $v0 *)
 
 let access_expr access base =
   match access with
   | InFrame offset ->
     let open Ir in
-    Mem (Binop (Add, base, Const (offset)))
+    Mem (Binop (Add, base, Const offset))
   | InReg reg ->
     Temp reg
 
 let word_size = 4
 
-(* $a0 ~ $a3 in MIPS *)
+(* $a0 ~ $a3 *)
 let reg_params =
   Array.init 4 ~f:(fun i -> Temp.temp_of_int (i + 4))
 
