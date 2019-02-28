@@ -1,5 +1,5 @@
 open Base
-open Parse
+open Common
 
 module Make : functor (Translate : Translate.S) -> sig
   type t

@@ -1,5 +1,4 @@
 open Base
-open Parse
 
 type 'a t
 

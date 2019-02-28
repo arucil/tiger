@@ -1,4 +1,4 @@
-open Semantic
+open Common
 
 val linearize : Ir.stmt -> Temp.temp_store -> Ir.stmt list
 

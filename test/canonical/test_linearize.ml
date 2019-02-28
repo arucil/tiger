@@ -5,6 +5,8 @@ open Parse
 open Semantic
 open Canonical
 open Stdio
+open Platform
+open Common
 
 let run_linearize s =
   let temp_file = Caml.Filename.temp_file "tiger_canonical_" "" in

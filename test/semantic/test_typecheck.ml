@@ -4,6 +4,8 @@ open Lex
 open Parse
 open Semantic
 open Stdio
+open Platform
+open Common
 
 let run_analyzer s =
   let temp_file = Caml.Filename.temp_file "tiger_semantic_" "" in

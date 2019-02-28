@@ -4,6 +4,8 @@ open Lex
 open Parse
 open Semantic
 open Stdio
+open Platform
+open Common
 
 type frag =
   | F of Ir.stmt

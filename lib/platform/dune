@@ -1,0 +1,3 @@
+(library
+  (name platform)
+  (libraries base common))

@@ -4,5 +4,4 @@
 
 (library
   (name parse)
-  (libraries base stdio lex errors)
-  (preprocess (pps ppx_deriving.std)))
+  (libraries base stdio lex errors common ast))

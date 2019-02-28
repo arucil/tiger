@@ -1,5 +1,5 @@
 open Base
-open Parse
+open Common
 
 type entry = int * bool ref
 

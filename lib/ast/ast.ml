@@ -1,3 +1,4 @@
+open Common
 
 type symbol = Symbol.t
   [@@deriving show]

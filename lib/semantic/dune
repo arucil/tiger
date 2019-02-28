@@ -1,4 +1,3 @@
 (library
   (name semantic)
-  (libraries base parse errors utils)
-  (preprocess (pps ppx_deriving.std)))
+  (libraries base ast ir errors utils))

@@ -1,5 +1,4 @@
 open Base
-open Parse
 
 type 'a t = (Symbol.t, 'a, Symbol.comparator_witness) Map.t
 

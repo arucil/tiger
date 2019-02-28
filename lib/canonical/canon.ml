@@ -1,5 +1,5 @@
 open Base
-open Semantic
+open Common
 open Ir
 
 let linearize stmt temp_store =

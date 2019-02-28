@@ -3,6 +3,7 @@ open OUnit2
 open Parse
 open Lex
 open Ast
+open Common
 
 let run_parser s =
   Parser.prog Lexer.get_token (Lexing.from_string s)

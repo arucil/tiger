@@ -1,3 +1,3 @@
-open Parse.Ast
+open Common
 
-val trans_prog : expr -> (module Translate.S) -> Temp.temp_store -> Type.t * Ir.stmt
+val trans_prog : Ast.expr -> (module Translate.S) -> Temp.temp_store -> Type.t * Ir.stmt

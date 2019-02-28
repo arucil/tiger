@@ -1,5 +1,5 @@
 open Base
-open Parse
+open Common
 
 type ir =
   | Expr of Ir.expr

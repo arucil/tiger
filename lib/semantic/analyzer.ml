@@ -1,5 +1,5 @@
 open Base
-open Parse
+open Common
 
 let trans_prog' (expr : Ast.expr) (module Trans : Translate.S) temp_store =
   let unique_store = Type.new_unique_store () in

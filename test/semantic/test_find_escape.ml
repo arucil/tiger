@@ -4,6 +4,7 @@ open Parse
 open Lex
 open Ast
 open Semantic
+open Common
 
 let run_find_escape s =
   let ast = Parser.prog Lexer.get_token (Lexing.from_string s) in

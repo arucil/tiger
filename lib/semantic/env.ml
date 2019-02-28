@@ -1,5 +1,5 @@
 open Base
-open Parse
+open Common
 
 module Make (Translate : Translate.S) = struct
 
