@@ -20,5 +20,6 @@ val new_labels : int -> temp_store -> label list
 
 val named_label : string -> label
 
+val show_temp : temp -> string
 
 val pp_temp : Format.formatter -> temp -> unit

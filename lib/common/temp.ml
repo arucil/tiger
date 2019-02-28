@@ -35,6 +35,7 @@ let new_labels n store =
 
 let named_label = Symbol.sym
 
+let show_temp temp = "t" ^ Int.to_string temp
 
 let pp_temp (fmt : Format.formatter) temp =
   Format.pp_print_string fmt ("t" ^ Int.to_string temp)

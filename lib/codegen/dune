@@ -1,0 +1,6 @@
+(ocamllex
+  (modules mnemonic_lex))
+
+(library
+  (name codegen)
+  (libraries base common utils))
