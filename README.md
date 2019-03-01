@@ -39,10 +39,8 @@ dune exec bin/tiger.exe
 The unit tests are built and run with Dune.
 
 ```bash
-dune runtest               # Run all tests
-dune runtest lib/lex       # Run lexer tests
-dune runtest lib/parse     # Run parser tests
-dune runtest lib/semantic  # Run semantic analyzer tests
+dune runtest                 # Run all tests
+dune runtest lib/DIRECTORY   # Run tests for specific module
 ```
 
 # License
