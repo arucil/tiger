@@ -19,7 +19,7 @@ let linearize stmt temp_store =
   in
 
   let rec reorder = function
-    | [] -> (Expr (Const 0), [])
+    | [] -> (Expr (Const 0l), [])
     | ((Call _) as e) :: exprs ->
       let t = Temp.new_temp temp_store in
       reorder (Eseq (Move (Temp t, e), Lval (Temp t)) :: exprs)
@@ -92,7 +92,7 @@ let linearize stmt temp_store =
       reorder_expr [e] (function
         | [e] -> Lval (Mem e)
         | _ -> Utils.Exn.unreachable ())
-    | e -> (Expr (Const 0), e)
+    | e -> (Expr (Const 0l), e)
 
   in
 

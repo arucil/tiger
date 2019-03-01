@@ -37,7 +37,17 @@ rule get_token =
   | alpha (alpha | digit)* as s
     { ID ((get_pos lexbuf), s) }
   | digit+ as s
-    { INT (get_pos lexbuf, Int.of_string s) }
+    {
+      let n =
+        try
+          Int32.of_string s
+        with
+        | Failure _ ->
+          (Errors.report (get_pos lexbuf) "integer overflow: %s" s;
+           0l)
+      in
+      INT (get_pos lexbuf, n)
+    }
   | ',' { COMMA (get_pos lexbuf) }
   | ':' { COLON (get_pos lexbuf) }
   | ';' { SEMI (get_pos lexbuf) }

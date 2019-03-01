@@ -42,7 +42,7 @@ type token =
   | ASSIGN of Errors.pos
   | ID of (Errors.pos * string)
   | STR of (Errors.pos * string)
-  | INT of (Errors.pos * int)
+  | INT of (Errors.pos * int32)
   | EOF of Errors.pos
   [@@deriving show]
 

@@ -112,10 +112,10 @@ a_B_c_1_2_3_.L1+If
       assert_result {| 123  5624214   -000234 000
 12000 |}
         [
-          INT ((1, 2), 123); INT ((1, 7), 5624214);
+          INT ((1, 2), 123l); INT ((1, 7), 5624214l);
           MINUS (1, 17);
-          INT ((1, 18), 234); INT ((1, 25), 0);
-          INT ((2, 1), 12000);
+          INT ((1, 18), 234l); INT ((1, 25), 0l);
+          INT ((2, 1), 12000l);
           EOF (2, 7)
         ]
         "");
@@ -139,7 +139,7 @@ a_B_c_1_2_3_.L1+If
 * outer** */2
 |}
           [
-            INT ((1, 1), 127); INT ((5, 13), 2);
+            INT ((1, 1), 127l); INT ((5, 13), 2l);
             EOF (6, 1)
           ]
           "")];
@@ -214,18 +214,18 @@ end
         [
           (Token.LET (2, 1)); (Token.VAR (3, 3)); (Token.ID ((3, 7), "foo"));
           (Token.COLON (3, 11)); (Token.ID ((3, 13), "int")); (Token.ASSIGN (3, 17));
-          (Token.INT ((3, 20), 30)); (Token.FUNCTION (4, 3));
+          (Token.INT ((3, 20), 30l)); (Token.FUNCTION (4, 3));
           (Token.ID ((4, 12), "fib")); (Token.LPAREN (4, 15));
           (Token.ID ((4, 16), "x")); (Token.COLON (4, 18));
           (Token.ID ((4, 20), "int")); (Token.RPAREN (4, 23)); (Token.COLON (4, 25));
           (Token.ID ((4, 27), "int")); (Token.EQ (4, 31)); (Token.IF (5, 5));
-          (Token.ID ((5, 8), "x")); (Token.LT (5, 10)); (Token.INT ((5, 12), 2));
+          (Token.ID ((5, 8), "x")); (Token.LT (5, 10)); (Token.INT ((5, 12), 2l));
           (Token.THEN (5, 14)); (Token.ID ((5, 19), "x")); (Token.ELSE (5, 21));
           (Token.ID ((5, 26), "fib")); (Token.LPAREN (5, 29));
-          (Token.ID ((5, 30), "x")); (Token.MINUS (5, 32)); (Token.INT ((5, 34), 1));
+          (Token.ID ((5, 30), "x")); (Token.MINUS (5, 32)); (Token.INT ((5, 34), 1l));
           (Token.RPAREN (5, 35)); (Token.PLUS (5, 37)); (Token.ID ((5, 39), "fib"));
           (Token.LPAREN (5, 42)); (Token.ID ((5, 43), "x")); (Token.MINUS (5, 45));
-          (Token.INT ((5, 47), 2)); (Token.RPAREN (5, 48)); (Token.IN (6, 1));
+          (Token.INT ((5, 47), 2l)); (Token.RPAREN (5, 48)); (Token.IN (6, 1));
           (Token.ID ((7, 3), "fib")); (Token.LPAREN (7, 6));
           (Token.ID ((7, 7), "foo")); (Token.RPAREN (7, 10)); (Token.END (8, 1));
           (Token.EOF (9, 1))

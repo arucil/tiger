@@ -9,7 +9,7 @@ type expr = Errors.pos * expr'
 and expr' =
   | VarExpr of var
   | NilExpr
-  | IntExpr of int
+  | IntExpr of int32
   | StrExpr of string
   | CallExpr of { func : symbol; args: expr list }
   | BinaryExpr of { lhs : expr; op : op; rhs : expr }

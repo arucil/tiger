@@ -32,7 +32,7 @@ module type S = sig
 
   val index_var : array:ir -> index:ir -> ir
 
-  val int : int -> ir
+  val int : int32 -> ir
 
   val str : string -> ir
 
@@ -138,7 +138,7 @@ module Make (Platf : Platform.S) = struct
   let to_expr (ir : ir) : Ir.expr =
     match ir with
     | Expr e -> e
-    | Stmt s -> Ir.Eseq (s, Ir.Const 0)
+    | Stmt s -> Ir.Eseq (s, Ir.Const 0l)
     | Cond c ->
       let r = Temp.new_temp !temp_store in
       let t = Temp.new_label !temp_store in
@@ -146,10 +146,10 @@ module Make (Platf : Platform.S) = struct
       let open Ir in
       Eseq (
         seq [
-          Move (Temp r, Const 1);
+          Move (Temp r, Const 1l);
           c t f;
           Label f;
-          Move (Temp r, Const 0);
+          Move (Temp r, Const 0l);
           Label t;
         ],
         Lval (Temp r))
@@ -167,13 +167,13 @@ module Make (Platf : Platform.S) = struct
     | Expr e ->
       (match e with
       | Const n ->
-        if n <> 0 then fun t _ -> Jump (Name t, [t])
+        if Int32.(n <> 0l) then fun t _ -> Jump (Name t, [t])
         else fun _ f -> Jump (Name f, [f])
-      | _ -> fun t f -> Cjump (Ne, e, Const 0, t, f))
+      | _ -> fun t f -> Cjump (Ne, e, Const 0l, t, f))
     | Stmt _ -> Utils.Exn.unreachable ()
     | Cond c -> c
 
-  let error = Expr (Ir.Const 0)
+  let error = Expr (Ir.Const 0l)
 
   let simple_var use_level (def_level, access) : ir =
     if Errors.has_errors () then
@@ -194,7 +194,7 @@ module Make (Platf : Platform.S) = struct
       if i = 0 then
         Expr (Lval (Mem (to_expr record)))
       else
-        Expr (Lval (Mem (Binop (Add, to_expr record, Const (i * Platf.word_size)))))
+        Expr (Lval (Mem (Binop (Add, to_expr record, Const (Int32.of_int_exn (i * Platf.word_size))))))
 
   (* TODO: emit code that check out-of-bound *)
   let index_var ~array ~index : ir =
@@ -204,7 +204,7 @@ module Make (Platf : Platform.S) = struct
       let open Ir in
       Expr (Lval (Mem (Binop (Add,
         to_expr array,
-        Binop (Mul, to_expr index, Const Platf.word_size)))))
+        Binop (Mul, to_expr index, Const (Int32.of_int_exn Platf.word_size))))))
 
   let int n : ir =
     let open Ir in
@@ -219,9 +219,9 @@ module Make (Platf : Platform.S) = struct
       fragment_list := !fragment_list @ [frag];
       Expr (Ir.Name label)
 
-  let nil = Expr (Const 0)
+  let nil = Expr (Const 0l)
 
-  let unit = Expr (Ir.Const 0)
+  let unit = Expr (Ir.Const 0l)
 
   let seq irs =
     let init = List.take irs (List.length irs - 1) |> List.map ~f:to_stmt in
@@ -304,7 +304,7 @@ module Make (Platf : Platform.S) = struct
       Cond (fun t f ->
         Cjump (op,
           Platf.external_call "compare_str" [to_expr lhs; to_expr rhs],
-          Const 0,
+          Const 0l,
           t, f))
 
   let assign ~var ~expr : ir =
@@ -413,12 +413,12 @@ module Make (Platf : Platform.S) = struct
       let open Ir in
       Expr (Eseq (
         seq (
-          Move (Temp r, Platf.external_call "alloc_record" [Const (List.length fields * Platf.word_size)])
+          Move (Temp r, Platf.external_call "alloc_record" [Const (Int32.of_int_exn (List.length fields * Platf.word_size))])
           ::
           List.mapi fields
             ~f:(fun i field ->
               Move (
-                Mem (Binop (Add, Lval (Temp r), Const (i * Platf.word_size))),
+                Mem (Binop (Add, Lval (Temp r), Const (Int32.of_int_exn (i * Platf.word_size)))),
                 to_expr field))
         ),
         Lval (Temp r)
@@ -469,7 +469,7 @@ module Make (Platf : Platform.S) = struct
         Cjump (Le, Lval i, Lval limit, t, break);
         Label t;
         to_stmt body;
-        Move (i, Binop (Add, Lval i, Const 1));
+        Move (i, Binop (Add, Lval i, Const 1l));
         Jump (Name test, [test]);
         Label break;
       ])

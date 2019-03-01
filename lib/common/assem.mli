@@ -9,7 +9,11 @@ type t =
       jumps : Temp.label array
     }
   | Label of { assem : mnemonic; label : Temp.label }
-  | Move of { assem : mnemonic; dst : Temp.temp; src : Temp.temp }
+  | Move of {
+      assem : mnemonic;
+      dst : Temp.temp;
+      src : Temp.temp
+    }
 
 val show : t -> (Temp.temp -> string) -> string
 

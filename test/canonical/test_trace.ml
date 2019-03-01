@@ -94,7 +94,7 @@ let test_trace =
         {|if 3 = 0 then print("a") else print("b")|}
         [
 (Ir.Label _L6);
-(Ir.Cjump (Ir.Ne, (Ir.Const 3), (Ir.Const 0), _L3, _L2));
+(Ir.Cjump (Ir.Ne, (Ir.Const 3l), (Ir.Const 0l), _L3, _L2));
 (Ir.Label _L2);
 (Ir.Expr (Ir.Call ((Ir.Name print), [(Ir.Name _L0)])));
 (Ir.Label _L4);
@@ -111,12 +111,12 @@ let test_trace =
         {|let var a := 2 in while a < 10 do a := a + 1 end|}
         [
 (Ir.Label _L4);
-(Ir.Move ((Ir.Temp t100), (Ir.Const 2)));
+(Ir.Move ((Ir.Temp t100), (Ir.Const 2l)));
 (Ir.Label _L1);
-(Ir.Cjump (Ir.Ge, (Ir.Lval (Ir.Temp t100)), (Ir.Const 10), _L0, _L2));
+(Ir.Cjump (Ir.Ge, (Ir.Lval (Ir.Temp t100)), (Ir.Const 10l), _L0, _L2));
 (Ir.Label _L2);
 (Ir.Move ((Ir.Temp t100),
-   (Ir.Binop (Ir.Add, (Ir.Lval (Ir.Temp t100)), (Ir.Const 1)))));
+   (Ir.Binop (Ir.Add, (Ir.Lval (Ir.Temp t100)), (Ir.Const 1l)))));
 (Ir.Jump ((Ir.Name _L1), [_L1]));
 (Ir.Label _L0);
 (Ir.Jump ((Ir.Name _L3), [_L3]));
@@ -140,16 +140,16 @@ end|}
 [
 (Ir.Label _L8);
 (Ir.Move ((Ir.Temp t100), (Ir.Name _L0)));
-(Ir.Move ((Ir.Temp t101), (Ir.Const 20)));
+(Ir.Move ((Ir.Temp t101), (Ir.Const 20l)));
 (Ir.Label _L5);
 (Ir.Move ((Ir.Temp t102),
    (Ir.Call ((Ir.Name ord), [(Ir.Lval (Ir.Temp t100))]))));
-(Ir.Cjump (Ir.Eq, (Ir.Lval (Ir.Temp t102)), (Ir.Const 0), _L1, _L6));
+(Ir.Cjump (Ir.Eq, (Ir.Lval (Ir.Temp t102)), (Ir.Const 0l), _L1, _L6));
 (Ir.Label _L6);
-(Ir.Cjump (Ir.Ge, (Ir.Lval (Ir.Temp t101)), (Ir.Const 10), _L3, _L2));
+(Ir.Cjump (Ir.Ge, (Ir.Lval (Ir.Temp t101)), (Ir.Const 10l), _L3, _L2));
 (Ir.Label _L2);
 (Ir.Move ((Ir.Temp t101),
-   (Ir.Binop (Ir.Add, (Ir.Lval (Ir.Temp t101)), (Ir.Const 1)))));
+   (Ir.Binop (Ir.Add, (Ir.Lval (Ir.Temp t101)), (Ir.Const 1l)))));
 (Ir.Label _L4);
 (Ir.Jump ((Ir.Name _L5), [_L5]));
 (Ir.Label _L3);

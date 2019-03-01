@@ -36,7 +36,7 @@ let rec merge_decl_group : Ast.decl list -> Ast.decl list = function
 %token <Errors.pos> PLUS MINUS TIMES DIV EQ NEQ GT GE LT LE AND OR DOT ASSIGN
 %token <Errors.pos> EOF
 %token <Errors.pos * string> ID STR
-%token <Errors.pos * int> INT
+%token <Errors.pos * int32> INT
 
 %nonassoc DO
 %nonassoc IFX

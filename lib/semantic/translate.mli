@@ -29,7 +29,7 @@ module type S = sig
 
   val index_var : array:ir -> index:ir -> ir
 
-  val int : int -> ir
+  val int : int32 -> ir
 
   val str : string -> ir
 

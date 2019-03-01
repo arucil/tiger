@@ -14,6 +14,8 @@ val new_temp : temp_store -> temp
 
 val temp_of_int : int -> temp
 
+val temp_to_int : temp -> int
+
 val new_label : temp_store -> label
 
 val new_labels : int -> temp_store -> label list

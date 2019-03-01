@@ -7,13 +7,19 @@ type access =
 
 let fp = Temp.temp_of_int 30 (* $fp *)
 
+let sp = Temp.temp_of_int 29 (* $sp *)
+
 let rv = Temp.temp_of_int 2  (* $v0 *)
+
+let zero = Temp.temp_of_int 0
+
+let ra = Temp.temp_of_int 31
 
 let access_expr access base =
   match access with
   | InFrame offset ->
     let open Ir in
-    Mem (Binop (Add, base, Const offset))
+    Mem (Binop (Add, base, Const (Int32.of_int_exn offset)))
   | InReg reg ->
     Temp reg
 
@@ -52,7 +58,7 @@ module Frame = struct
             else
               let open Ir in
               (* fp 已经更新,指向arguments底部 *)
-              Binop (Add, Lval (Temp fp), Const ((i - Array.length reg_params) * word_size))
+              Binop (Add, Lval (Temp fp), Const (Int32.of_int_exn ((i - Array.length reg_params) * word_size)))
           in
           let dest =
             if escape then

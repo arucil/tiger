@@ -112,16 +112,16 @@ let test_basic_blocks =
         [
   [
     (Ir.Label _L4);
-    (Ir.Cjump (Ir.Gt, (Ir.Const 3), (Ir.Const 2), _L0, _L1));
+    (Ir.Cjump (Ir.Gt, (Ir.Const 3l), (Ir.Const 2l), _L0, _L1));
   ];
   [
     (Ir.Label _L0);
-    (Ir.Move ((Ir.Temp t100), (Ir.Const 37)));
+    (Ir.Move ((Ir.Temp t100), (Ir.Const 37l)));
     (Ir.Jump ((Ir.Name _L2), [_L2]));
   ];
   [
     (Ir.Label _L1);
-    (Ir.Move ((Ir.Temp t100), (Ir.Const 12)));
+    (Ir.Move ((Ir.Temp t100), (Ir.Const 12l)));
     (Ir.Jump ((Ir.Name _L2), [_L2]));
   ];
   [
@@ -138,19 +138,19 @@ let test_basic_blocks =
         [
   [
     (Ir.Label _L5);
-    (Ir.Move ((Ir.Temp t100), (Ir.Const 2)));
+    (Ir.Move ((Ir.Temp t100), (Ir.Const 2l)));
     (Ir.Jump ((Ir.Name _L2), [_L2]));
   ];
   [
     (Ir.Label _L2);
-    (Ir.Cjump (Ir.Gt, (Ir.Const 4),
-   (Ir.Binop (Ir.Add, (Ir.Const 2), (Ir.Const 1))), _L3, _L0));
+    (Ir.Cjump (Ir.Gt, (Ir.Const 4l),
+   (Ir.Binop (Ir.Add, (Ir.Const 2l), (Ir.Const 1l))), _L3, _L0));
   ];
   [
     (Ir.Label _L3);
     (Ir.Expr (Ir.Call ((Ir.Name print), [(Ir.Name _L1)])));
     (Ir.Move ((Ir.Temp t100),
-   (Ir.Binop (Ir.Add, (Ir.Lval (Ir.Temp t100)), (Ir.Const 10)))));
+   (Ir.Binop (Ir.Add, (Ir.Lval (Ir.Temp t100)), (Ir.Const 10l)))));
     (Ir.Jump ((Ir.Name _L2), [_L2]));
   ];
   [
@@ -166,8 +166,8 @@ let test_basic_blocks =
         [
   [
     (Ir.Label _L9);
-    (Ir.Move ((Ir.Temp t100), (Ir.Const 1)));
-    (Ir.Move ((Ir.Temp t101), (Ir.Const 10)));
+    (Ir.Move ((Ir.Temp t100), (Ir.Const 1l)));
+    (Ir.Move ((Ir.Temp t101), (Ir.Const 10l)));
     (Ir.Jump ((Ir.Name _L7), [_L7]));
   ];
   [
@@ -177,7 +177,7 @@ let test_basic_blocks =
   ];
   [
     (Ir.Label _L6);
-    (Ir.Cjump (Ir.Lt, (Ir.Lval (Ir.Temp t100)), (Ir.Const 5), _L3, _L4));
+    (Ir.Cjump (Ir.Lt, (Ir.Lval (Ir.Temp t100)), (Ir.Const 5l), _L3, _L4));
   ];
   [
     (Ir.Label _L3);
@@ -192,7 +192,7 @@ let test_basic_blocks =
   [
     (Ir.Label _L5);
     (Ir.Move ((Ir.Temp t100),
-   (Ir.Binop (Ir.Add, (Ir.Lval (Ir.Temp t100)), (Ir.Const 1)))));
+   (Ir.Binop (Ir.Add, (Ir.Lval (Ir.Temp t100)), (Ir.Const 1l)))));
     (Ir.Jump ((Ir.Name _L7), [_L7]));
   ];
   [
@@ -219,23 +219,23 @@ end|}
   [
     (Ir.Label _L8);
     (Ir.Move ((Ir.Temp t100), (Ir.Name _L0)));
-    (Ir.Move ((Ir.Temp t101), (Ir.Const 20)));
+    (Ir.Move ((Ir.Temp t101), (Ir.Const 20l)));
     (Ir.Jump ((Ir.Name _L5), [_L5]));
   ];
   [
     (Ir.Label _L5);
     (Ir.Move ((Ir.Temp t102),
    (Ir.Call ((Ir.Name ord), [(Ir.Lval (Ir.Temp t100))]))));
-    (Ir.Cjump (Ir.Ne, (Ir.Lval (Ir.Temp t102)), (Ir.Const 0), _L6, _L1));
+    (Ir.Cjump (Ir.Ne, (Ir.Lval (Ir.Temp t102)), (Ir.Const 0l), _L6, _L1));
   ];
   [
     (Ir.Label _L6);
-    (Ir.Cjump (Ir.Lt, (Ir.Lval (Ir.Temp t101)), (Ir.Const 10), _L2, _L3));
+    (Ir.Cjump (Ir.Lt, (Ir.Lval (Ir.Temp t101)), (Ir.Const 10l), _L2, _L3));
   ];
   [
     (Ir.Label _L2);
     (Ir.Move ((Ir.Temp t101),
-   (Ir.Binop (Ir.Add, (Ir.Lval (Ir.Temp t101)), (Ir.Const 1)))));
+   (Ir.Binop (Ir.Add, (Ir.Lval (Ir.Temp t101)), (Ir.Const 1l)))));
     (Ir.Jump ((Ir.Name _L4), [_L4]));
   ];
   [

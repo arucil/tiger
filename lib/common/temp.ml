@@ -25,6 +25,8 @@ let new_temp store =
 
 let temp_of_int n = n
 
+let temp_to_int n = n
+
 let new_label store =
   let i = store.label_counter in
   store.label_counter <- i + 1;

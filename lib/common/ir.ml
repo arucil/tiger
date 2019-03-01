@@ -3,7 +3,7 @@ open Base
 module Format = Caml.Format
 
 type expr =
-  | Const of int
+  | Const of int32
   | Name of Temp.label
   | Binop of binop * expr * expr
   | Unop of unop * expr

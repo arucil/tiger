@@ -39,23 +39,23 @@ let test_parse =
            Ast.BinaryExpr {
              lhs =
              ((1, 3),
-              Ast.BinaryExpr {lhs = ((1, 1), (Ast.IntExpr 1)); op = Ast.AddOp;
+              Ast.BinaryExpr {lhs = ((1, 1), (Ast.IntExpr 1l)); op = Ast.AddOp;
                 rhs =
                 ((1, 17),
                  Ast.BinaryExpr {
                    lhs =
                    ((1, 8),
-                    Ast.BinaryExpr {lhs = ((1, 6), (Ast.IntExpr 2)); op = Ast.SubOp;
+                    Ast.BinaryExpr {lhs = ((1, 6), (Ast.IntExpr 2l)); op = Ast.SubOp;
                       rhs =
                       ((1, 12),
-                       Ast.BinaryExpr {lhs = ((1, 10), (Ast.IntExpr 3));
-                         op = Ast.MulOp; rhs = ((1, 14), (Ast.IntExpr 4))})});
-                   op = Ast.DivOp; rhs = ((1, 19), (Ast.IntExpr 5))})});
-             op = Ast.SubOp; rhs = ((1, 23), (Ast.IntExpr 6))});
+                       Ast.BinaryExpr {lhs = ((1, 10), (Ast.IntExpr 3l));
+                         op = Ast.MulOp; rhs = ((1, 14), (Ast.IntExpr 4l))})});
+                   op = Ast.DivOp; rhs = ((1, 19), (Ast.IntExpr 5l))})});
+             op = Ast.SubOp; rhs = ((1, 23), (Ast.IntExpr 6l))});
           op = Ast.AddOp;
           rhs =
           ((1, 27),
-           Ast.UnaryExpr {op = Ast.NegOp; rand = ((1, 28), (Ast.IntExpr 7))})}));
+           Ast.UnaryExpr {op = Ast.NegOp; rand = ((1, 28), (Ast.IntExpr 7l))})}));
 
 
     "primitive" >:: (fun _ ->
@@ -68,7 +68,7 @@ let test_parse =
             Ast.BinaryExpr {
               lhs =
               ((1, 4),
-              Ast.BinaryExpr {lhs = ((1, 1), (Ast.IntExpr 123)); op = Ast.MulOp;
+              Ast.BinaryExpr {lhs = ((1, 1), (Ast.IntExpr 123l)); op = Ast.MulOp;
                 rhs = ((1, 5), (Ast.StrExpr "he\ty"))});
               op = Ast.SubOp; rhs = ((1, 15), (Ast.SeqExpr []))});
           op = Ast.AddOp; rhs = ((1, 20), Ast.NilExpr)}));
@@ -81,8 +81,8 @@ let test_parse =
         Ast.BinaryExpr {
           lhs =
           ((1, 3),
-            Ast.BinaryExpr {lhs = ((1, 2), (Ast.IntExpr 1)); op = Ast.AddOp;
-              rhs = ((1, 4), (Ast.IntExpr 2))});
+            Ast.BinaryExpr {lhs = ((1, 2), (Ast.IntExpr 1l)); op = Ast.AddOp;
+              rhs = ((1, 4), (Ast.IntExpr 2l))});
           op = Ast.AddOp;
           rhs =
           ((1, 16),
@@ -91,18 +91,18 @@ let test_parse =
               ((1, 7),
               (Ast.SeqExpr
                   [((1, 9),
-                    Ast.BinaryExpr {lhs = ((1, 8), (Ast.IntExpr 1)); op = Ast.MulOp;
-                      rhs = ((1, 10), (Ast.IntExpr 3))});
+                    Ast.BinaryExpr {lhs = ((1, 8), (Ast.IntExpr 1l)); op = Ast.MulOp;
+                      rhs = ((1, 10), (Ast.IntExpr 3l))});
                     ((1, 13),
-                    Ast.BinaryExpr {lhs = ((1, 12), (Ast.IntExpr 2));
-                      op = Ast.SubOp; rhs = ((1, 14), (Ast.IntExpr 4))})
+                    Ast.BinaryExpr {lhs = ((1, 12), (Ast.IntExpr 2l));
+                      op = Ast.SubOp; rhs = ((1, 14), (Ast.IntExpr 4l))})
                     ]));
               op = Ast.DivOp;
               rhs =
               ((1, 17),
               (Ast.SeqExpr
-                  [((1, 18), (Ast.IntExpr 1)); ((1, 20), (Ast.IntExpr 2));
-                    ((1, 22), (Ast.IntExpr 3)); ((1, 24), (Ast.IntExpr 4))]))})}));
+                  [((1, 18), (Ast.IntExpr 1l)); ((1, 20), (Ast.IntExpr 2l));
+                    ((1, 22), (Ast.IntExpr 3l)); ((1, 24), (Ast.IntExpr 4l))]))})}));
 
 
     "comparison" >:: (fun _ ->
@@ -112,22 +112,22 @@ let test_parse =
         Ast.BinaryExpr {
           lhs =
           ((1, 4),
-            Ast.BinaryExpr {lhs = ((1, 2), (Ast.IntExpr 2)); op = Ast.EqOp;
+            Ast.BinaryExpr {lhs = ((1, 2), (Ast.IntExpr 2l)); op = Ast.EqOp;
               rhs =
               ((1, 9),
-              Ast.BinaryExpr {lhs = ((1, 7), (Ast.IntExpr 2)); op = Ast.NeqOp;
+              Ast.BinaryExpr {lhs = ((1, 7), (Ast.IntExpr 2l)); op = Ast.NeqOp;
                 rhs =
                 ((1, 12),
                   (Ast.SeqExpr
                     [((1, 15),
-                      Ast.BinaryExpr {lhs = ((1, 13), (Ast.IntExpr 3));
-                        op = Ast.LtOp; rhs = ((1, 17), (Ast.IntExpr 7))});
+                      Ast.BinaryExpr {lhs = ((1, 13), (Ast.IntExpr 3l));
+                        op = Ast.LtOp; rhs = ((1, 17), (Ast.IntExpr 7l))});
                       ((1, 23),
-                        Ast.BinaryExpr {lhs = ((1, 20), (Ast.IntExpr 10));
-                          op = Ast.LeOp; rhs = ((1, 26), (Ast.IntExpr 11))});
+                        Ast.BinaryExpr {lhs = ((1, 20), (Ast.IntExpr 10l));
+                          op = Ast.LeOp; rhs = ((1, 26), (Ast.IntExpr 11l))});
                       ((1, 33),
-                        Ast.BinaryExpr {lhs = ((1, 30), (Ast.IntExpr 78));
-                          op = Ast.GeOp; rhs = ((1, 36), (Ast.IntExpr 12))})
+                        Ast.BinaryExpr {lhs = ((1, 30), (Ast.IntExpr 78l));
+                          op = Ast.GeOp; rhs = ((1, 36), (Ast.IntExpr 12l))})
                       ]))})});
           op = Ast.GtOp; rhs = ((1, 44), (Ast.StrExpr "foo"))}));
 
@@ -139,7 +139,7 @@ let test_parse =
         Ast.BinaryExpr {
           lhs =
           ((1, 3),
-            Ast.BinaryExpr {lhs = ((1, 1), (Ast.IntExpr 0)); op = Ast.OrOp;
+            Ast.BinaryExpr {lhs = ((1, 1), (Ast.IntExpr 0l)); op = Ast.OrOp;
               rhs =
               ((1, 16),
               Ast.BinaryExpr {
@@ -148,15 +148,15 @@ let test_parse =
                   Ast.BinaryExpr {
                     lhs =
                     ((1, 7),
-                    Ast.BinaryExpr {lhs = ((1, 5), (Ast.IntExpr 3)); op = Ast.EqOp;
-                      rhs = ((1, 9), (Ast.IntExpr 3))});
+                    Ast.BinaryExpr {lhs = ((1, 5), (Ast.IntExpr 3l)); op = Ast.EqOp;
+                      rhs = ((1, 9), (Ast.IntExpr 3l))});
                     op = Ast.AndOp; rhs = ((1, 13), Ast.SeqExpr [])});
-                op = Ast.AndOp; rhs = ((1, 18), (Ast.IntExpr 99))})});
+                op = Ast.AndOp; rhs = ((1, 18), (Ast.IntExpr 99l))})});
           op = Ast.OrOp;
           rhs =
           ((1, 25),
-            Ast.BinaryExpr {lhs = ((1, 23), (Ast.IntExpr 2)); op = Ast.GtOp;
-              rhs = ((1, 27), (Ast.IntExpr 1))})}));
+            Ast.BinaryExpr {lhs = ((1, 23), (Ast.IntExpr 2l)); op = Ast.GtOp;
+              rhs = ((1, 27), (Ast.IntExpr 1l))})}));
 
 
     "call" >:: (fun _ ->
@@ -173,11 +173,11 @@ let test_parse =
                 Ast.CallExpr {func = Symbol.sym "baz";
                   args =
                   [((1, 16),
-                    Ast.BinaryExpr {lhs = ((1, 15), (Ast.IntExpr 7)); op = Ast.AddOp;
-                      rhs = ((1, 17), (Ast.IntExpr 2))})
+                    Ast.BinaryExpr {lhs = ((1, 15), (Ast.IntExpr 7l)); op = Ast.AddOp;
+                      rhs = ((1, 17), (Ast.IntExpr 2l))})
                     ]});
                 ((1, 20),
-                Ast.UnaryExpr {op = Ast.NegOp; rand = ((1, 21), (Ast.IntExpr 3))});
+                Ast.UnaryExpr {op = Ast.NegOp; rand = ((1, 21), (Ast.IntExpr 3l))});
                 ((1, 23), (Ast.StrExpr "\"hey\""))]})}));
 
 
@@ -218,7 +218,7 @@ let test_parse =
                 Ast.AssignExpr {
                   var =
                   (Ast.IndexVar ((1, 10), (Ast.SimpleVar ((1, 8), Symbol.sym "bB")),
-                      ((1, 11), (Ast.IntExpr 27))));
+                      ((1, 11), (Ast.IntExpr 27l))));
                   expr = ((1, 18), (Ast.StrExpr "qaz"))})});
               ((1, 39),
               Ast.AssignExpr {
@@ -237,8 +237,8 @@ let test_parse =
         Ast.ArrayExpr {ty = Symbol.sym "foo";
           size =
           ((1, 7),
-            Ast.BinaryExpr {lhs = ((1, 5), (Ast.IntExpr 2)); op = Ast.AddOp;
-              rhs = ((1, 9), (Ast.IntExpr 3))});
+            Ast.BinaryExpr {lhs = ((1, 5), (Ast.IntExpr 2l)); op = Ast.AddOp;
+              rhs = ((1, 9), (Ast.IntExpr 3l))});
           init = ((1, 15), (Ast.StrExpr "jj"))}));
 
 
@@ -251,8 +251,8 @@ let test_parse =
           [((1, 7), Symbol.sym "name", ((1, 14), (Ast.StrExpr "abc")));
             ((1, 21), Symbol.sym "age",
               ((1, 30),
-              Ast.BinaryExpr {lhs = ((1, 27), (Ast.IntExpr 37)); op = Ast.MulOp;
-                rhs = ((1, 32), (Ast.IntExpr 2))}));
+              Ast.BinaryExpr {lhs = ((1, 27), (Ast.IntExpr 37l)); op = Ast.MulOp;
+                rhs = ((1, 32), (Ast.IntExpr 2l))}));
             ((1, 35), Symbol.sym "baz", ((1, 41), Ast.RecordExpr {ty = Symbol.sym "bar"; fields = []}));
             ((1, 49), Symbol.sym "biz",
               ((1, 55),
@@ -273,12 +273,12 @@ let test_parse =
                 ((1, 7),
                 Ast.BinaryExpr {
                   lhs = ((1, 5), (Ast.VarExpr (Ast.SimpleVar ((1, 5), Symbol.sym "a"))));
-                  op = Ast.GtOp; rhs = ((1, 9), (Ast.IntExpr 2))});
+                  op = Ast.GtOp; rhs = ((1, 9), (Ast.IntExpr 2l))});
                 conseq =
                 ((1, 18),
-                Ast.BinaryExpr {lhs = ((1, 16), (Ast.IntExpr 1)); op = Ast.AddOp;
-                  rhs = ((1, 20), (Ast.IntExpr 2))});
-                alt = (Some ((1, 27), (Ast.IntExpr 3)))});
+                Ast.BinaryExpr {lhs = ((1, 16), (Ast.IntExpr 1l)); op = Ast.AddOp;
+                  rhs = ((1, 20), (Ast.IntExpr 2l))});
+                alt = (Some ((1, 27), (Ast.IntExpr 3l)))});
               ((1, 30),
               Ast.IfExpr {
                 cond =
@@ -286,23 +286,23 @@ let test_parse =
                   Ast.BinaryExpr {
                     lhs =
                     ((1, 35),
-                    Ast.BinaryExpr {lhs = ((1, 33), (Ast.IntExpr 3));
-                      op = Ast.MulOp; rhs = ((1, 37), (Ast.IntExpr 2))});
-                    op = Ast.SubOp; rhs = ((1, 41), (Ast.IntExpr 2))});
+                    Ast.BinaryExpr {lhs = ((1, 33), (Ast.IntExpr 3l));
+                      op = Ast.MulOp; rhs = ((1, 37), (Ast.IntExpr 2l))});
+                    op = Ast.SubOp; rhs = ((1, 41), (Ast.IntExpr 2l))});
                 conseq =
                 ((1, 48),
                   Ast.IfExpr {
                     cond =
                     ((1, 51),
-                    Ast.UnaryExpr {op = Ast.NegOp; rand = ((1, 52), (Ast.IntExpr 2))});
+                    Ast.UnaryExpr {op = Ast.NegOp; rand = ((1, 52), (Ast.IntExpr 2l))});
                     conseq =
                     ((1, 60),
-                    Ast.BinaryExpr {lhs = ((1, 59), (Ast.IntExpr 1));
-                      op = Ast.AddOp; rhs = ((1, 61), (Ast.IntExpr 2))});
+                    Ast.BinaryExpr {lhs = ((1, 59), (Ast.IntExpr 1l));
+                      op = Ast.AddOp; rhs = ((1, 61), (Ast.IntExpr 2l))});
                     alt =
                     (Some ((1, 69),
-                          Ast.BinaryExpr {lhs = ((1, 68), (Ast.IntExpr 2));
-                            op = Ast.DivOp; rhs = ((1, 70), (Ast.IntExpr 3))}))});
+                          Ast.BinaryExpr {lhs = ((1, 68), (Ast.IntExpr 2l));
+                            op = Ast.DivOp; rhs = ((1, 70), (Ast.IntExpr 3l))}))});
                 alt = None})
               ])));
 
@@ -316,7 +316,7 @@ let test_parse =
           ((1, 9),
             Ast.BinaryExpr {
               lhs = ((1, 7), (Ast.VarExpr (Ast.SimpleVar ((1, 7), Symbol.sym "a"))));
-              op = Ast.GtOp; rhs = ((1, 11), (Ast.IntExpr 2))});
+              op = Ast.GtOp; rhs = ((1, 11), (Ast.IntExpr 2l))});
           body =
           ((1, 18),
             Ast.AssignExpr {var = (Ast.SimpleVar ((1, 16), Symbol.sym "a"));
@@ -324,7 +324,7 @@ let test_parse =
               ((1, 23),
               Ast.BinaryExpr {
                 lhs = ((1, 21), (Ast.VarExpr (Ast.SimpleVar ((1, 21), Symbol.sym "a"))));
-                op = Ast.DivOp; rhs = ((1, 25), (Ast.IntExpr 7))})})}));
+                op = Ast.DivOp; rhs = ((1, 25), (Ast.IntExpr 7l))})})}));
 
 
     "for" >:: (fun _ ->
@@ -334,12 +334,12 @@ let test_parse =
         Ast.ForExpr {var = Symbol.sym "foo"; escape = ref true;
           low =
           ((1, 14),
-            Ast.BinaryExpr {lhs = ((1, 12), (Ast.IntExpr 1)); op = Ast.AddOp;
-              rhs = ((1, 16), (Ast.IntExpr 2))});
+            Ast.BinaryExpr {lhs = ((1, 12), (Ast.IntExpr 1l)); op = Ast.AddOp;
+              rhs = ((1, 16), (Ast.IntExpr 2l))});
           high =
           ((1, 23),
-            Ast.BinaryExpr {lhs = ((1, 21), (Ast.IntExpr 3)); op = Ast.MulOp;
-              rhs = ((1, 25), (Ast.IntExpr 2))});
+            Ast.BinaryExpr {lhs = ((1, 21), (Ast.IntExpr 3l)); op = Ast.MulOp;
+              rhs = ((1, 25), (Ast.IntExpr 2l))});
           body =
           ((1, 30),
             Ast.CallExpr {func = Symbol.sym "bar";
@@ -356,12 +356,12 @@ let test_parse =
             Ast.BinaryExpr {
               lhs =
               ((1, 6),
-              Ast.BinaryExpr {lhs = ((1, 4), (Ast.IntExpr 7)); op = Ast.MulOp;
-                rhs = ((1, 8), (Ast.IntExpr 8))});
-              op = Ast.EqOp; rhs = ((1, 12), (Ast.IntExpr 1))});
+              Ast.BinaryExpr {lhs = ((1, 4), (Ast.IntExpr 7l)); op = Ast.MulOp;
+                rhs = ((1, 8), (Ast.IntExpr 8l))});
+              op = Ast.EqOp; rhs = ((1, 12), (Ast.IntExpr 1l))});
           conseq =
           ((1, 19),
-            (Ast.SeqExpr [((1, 20), (Ast.IntExpr 2)); ((1, 22), (Ast.IntExpr 3))]));
+            (Ast.SeqExpr [((1, 20), (Ast.IntExpr 2l)); ((1, 22), (Ast.IntExpr 3l))]));
           alt = (Some ((1, 30), Ast.BreakExpr))}));
 
 
@@ -386,7 +386,7 @@ let test_parse =
             ];
           body =
           ((1, 22),
-            (Ast.SeqExpr [((1, 23), (Ast.IntExpr 1)); ((1, 26), (Ast.IntExpr 2))]))}));
+            (Ast.SeqExpr [((1, 23), (Ast.IntExpr 1l)); ((1, 26), (Ast.IntExpr 2l))]))}));
 
 
     "record decl" >:: (fun _ ->
@@ -431,8 +431,8 @@ let test_parse =
           [Ast.VarDecl {name = Symbol.sym "foo"; escape = ref true; ty = None;
               init =
               ((1, 18),
-              Ast.BinaryExpr {lhs = ((1, 16), (Ast.IntExpr 2)); op = Ast.AddOp;
-                rhs = ((1, 20), (Ast.IntExpr 3))});
+              Ast.BinaryExpr {lhs = ((1, 16), (Ast.IntExpr 2l)); op = Ast.AddOp;
+                rhs = ((1, 20), (Ast.IntExpr 3l))});
               pos = (1, 5)}
             ];
           body = ((1, 25), (Ast.VarExpr (Ast.SimpleVar ((1, 25), Symbol.sym "foo"))))}));
@@ -448,7 +448,7 @@ let test_parse =
               ty = (Some ((1, 15), Symbol.sym "string"));
               init =
               ((1, 25),
-              Ast.UnaryExpr {op = Ast.NegOp; rand = ((1, 26), (Ast.IntExpr 4))});
+              Ast.UnaryExpr {op = Ast.NegOp; rand = ((1, 26), (Ast.IntExpr 4l))});
               pos = (1, 5)}
             ];
           body = ((1, 30), Ast.SeqExpr [])}));
@@ -464,8 +464,8 @@ let test_parse =
               [{ Ast.name = Symbol.sym "foo"; params = []; ret = None;
                   body =
                   ((1, 24),
-                  Ast.BinaryExpr {lhs = ((1, 22), (Ast.IntExpr 1)); op = Ast.AddOp;
-                    rhs = ((1, 26), (Ast.IntExpr 2))});
+                  Ast.BinaryExpr {lhs = ((1, 22), (Ast.IntExpr 1l)); op = Ast.AddOp;
+                    rhs = ((1, 26), (Ast.IntExpr 2l))});
                   pos = (1, 5) };
                 { Ast.name = Symbol.sym "bar";
                   params =
@@ -506,7 +506,7 @@ let test_parse =
                   ((1, 67),
                     Ast.BinaryExpr {
                       lhs = ((1, 64), (Ast.VarExpr (Ast.SimpleVar ((1, 64), Symbol.sym "xx"))));
-                      op = Ast.AddOp; rhs = ((1, 69), (Ast.IntExpr 1))});
+                      op = Ast.AddOp; rhs = ((1, 69), (Ast.IntExpr 1l))});
                   pos = (1, 35) }
                 ])
             ];
@@ -550,8 +550,8 @@ end
                Ast.BinaryExpr {
                  lhs =
                  ((5, 30), (Ast.VarExpr (Ast.SimpleVar ((5, 30), Symbol.sym "x"))));
-                 op = Ast.EqOp; rhs = ((5, 34), (Ast.IntExpr 0))});
-              conseq = ((5, 41), (Ast.IntExpr 1));
+                 op = Ast.EqOp; rhs = ((5, 34), (Ast.IntExpr 0l))});
+              conseq = ((5, 41), (Ast.IntExpr 1l));
               alt =
               (Some ((5, 48),
                      Ast.CallExpr {func = Symbol.sym "odd";
@@ -561,7 +561,7 @@ end
                            lhs =
                            ((5, 52),
                             (Ast.VarExpr (Ast.SimpleVar ((5, 52), Symbol.sym "x"))));
-                           op = Ast.SubOp; rhs = ((5, 56), (Ast.IntExpr 1))})
+                           op = Ast.SubOp; rhs = ((5, 56), (Ast.IntExpr 1l))})
                          ]}))});
            pos = (5, 3) };
           { Ast.name = Symbol.sym "odd";
@@ -578,8 +578,8 @@ end
                 Ast.BinaryExpr {
                   lhs =
                   ((6, 34), (Ast.VarExpr (Ast.SimpleVar ((6, 34), Symbol.sym "x"))));
-                  op = Ast.EqOp; rhs = ((6, 38), (Ast.IntExpr 0))});
-               conseq = ((6, 45), (Ast.IntExpr 0));
+                  op = Ast.EqOp; rhs = ((6, 38), (Ast.IntExpr 0l))});
+               conseq = ((6, 45), (Ast.IntExpr 0l));
                alt =
                (Some ((6, 52),
                       Ast.CallExpr {func = Symbol.sym "even";
@@ -589,14 +589,14 @@ end
                             lhs =
                             ((6, 57),
                              (Ast.VarExpr (Ast.SimpleVar ((6, 57), Symbol.sym "x"))));
-                            op = Ast.SubOp; rhs = ((6, 61), (Ast.IntExpr 1))})
+                            op = Ast.SubOp; rhs = ((6, 61), (Ast.IntExpr 1l))})
                           ]}))});
             pos = (6, 3) }
           ]);
      Ast.VarDecl {name = Symbol.sym "abc"; escape = ref true; ty = None;
        init =
        ((7, 14),
-        Ast.CallExpr {func = Symbol.sym "foo"; args = [((7, 18), (Ast.IntExpr 30))]});
+        Ast.CallExpr {func = Symbol.sym "foo"; args = [((7, 18), (Ast.IntExpr 30l))]});
        pos = (7, 3)};
      Ast.VarDecl {name = Symbol.sym "zoo"; escape = ref true;
        ty = (Some ((8, 13), Symbol.sym "string"));

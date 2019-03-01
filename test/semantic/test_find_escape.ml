@@ -54,9 +54,9 @@ end
  Ast.LetExpr {
    decls =
    [Ast.VarDecl {name = Symbol.sym "a"; escape = ref (false); ty = None;
-      init = ((3, 12), (Ast.IntExpr 30)); pos = (3, 3)};
+      init = ((3, 12), (Ast.IntExpr 30l)); pos = (3, 3)};
      Ast.VarDecl {name = Symbol.sym "b"; escape = ref (true); ty = None;
-       init = ((4, 12), (Ast.IntExpr 40)); pos = (4, 3)};
+       init = ((4, 12), (Ast.IntExpr 40l)); pos = (4, 3)};
      Ast.VarDecl {name = Symbol.sym "c"; escape = ref (true); ty = None;
        init = ((5, 12), (Ast.SeqExpr [])); pos = (5, 3)};
      Ast.VarDecl {name = Symbol.sym "d"; escape = ref (true); ty = None;
@@ -77,12 +77,12 @@ end
                    ((9, 6),
                     (Ast.SeqExpr
                        [((9, 7),
-                         Ast.IfExpr {cond = ((9, 10), (Ast.IntExpr 12));
+                         Ast.IfExpr {cond = ((9, 10), (Ast.IntExpr 12l));
                            conseq =
                            ((9, 20),
                             Ast.AssignExpr {
                               var = (Ast.SimpleVar ((9, 18), Symbol.sym "c"));
-                              expr = ((9, 23), (Ast.IntExpr 2))});
+                              expr = ((9, 23), (Ast.IntExpr 2l))});
                            alt =
                            (Some ((10, 7),
                                   Ast.LetExpr {
@@ -109,7 +109,7 @@ end
                                                        11, 36), Symbol.sym "e"));
                                                     expr =
                                                     ((11, 41),
-                                                     (Ast.IntExpr 2))})
+                                                     (Ast.IntExpr 2l))})
                                                  ]));
                                            pos = (11, 9) }
                                           ])
@@ -117,7 +117,7 @@ end
                                     body = ((12, 9), (Ast.SeqExpr []))}))});
                          ((14, 7),
                           Ast.UnaryExpr {op = Ast.NegOp;
-                            rand = ((14, 8), (Ast.IntExpr 1))})
+                            rand = ((14, 8), (Ast.IntExpr 1l))})
                          ]));
                    op = Ast.AddOp;
                    rhs =
@@ -129,7 +129,7 @@ end
                          lhs =
                          ((14, 16),
                           (Ast.VarExpr (Ast.SimpleVar ((14, 16), Symbol.sym "b"))));
-                         op = Ast.MulOp; rhs = ((14, 18), (Ast.IntExpr 4))})})});
+                         op = Ast.MulOp; rhs = ((14, 18), (Ast.IntExpr 4l))})})});
                  ((14, 23), (Ast.SeqExpr []))]));
            pos = (8, 3) }
           ])
@@ -217,9 +217,9 @@ end
                                       (Ast.VarExpr
                                          (Ast.SimpleVar ((9, 13), Symbol.sym "z"))));
                                      op = Ast.AddOp;
-                                     rhs = ((9, 15), (Ast.IntExpr 3))})
+                                     rhs = ((9, 15), (Ast.IntExpr 3l))})
                                   ));
-                               expr = ((9, 21), (Ast.IntExpr 23))})
+                               expr = ((9, 21), (Ast.IntExpr 23l))})
                             ]));
                       pos = (7, 7) }
                     ])
@@ -232,7 +232,7 @@ end
                   Ast.BinaryExpr {
                     lhs =
                     ((11, 13), (Ast.VarExpr (Ast.SimpleVar ((11, 13), Symbol.sym "x"))));
-                    op = Ast.LtOp; rhs = ((11, 17), (Ast.IntExpr 12))});
+                    op = Ast.LtOp; rhs = ((11, 17), (Ast.IntExpr 12l))});
                  body =
                  ((12, 10),
                   Ast.AssignExpr {var = (Ast.SimpleVar ((12, 8), Symbol.sym "x"));
@@ -241,7 +241,7 @@ end
                      Ast.BinaryExpr {
                        lhs =
                        ((12, 13), (Ast.VarExpr (Ast.SimpleVar ((12, 13), Symbol.sym "x"))));
-                       op = Ast.AddOp; rhs = ((12, 17), (Ast.IntExpr 12))})})})});
+                       op = Ast.AddOp; rhs = ((12, 17), (Ast.IntExpr 12l))})})})});
            pos = (4, 3) }
           ])
      ];
@@ -264,22 +264,22 @@ for i := 1 + 2 to 30 do
  Ast.ForExpr {var = Symbol.sym "i"; escape = ref (false);
    low =
    ((2, 12),
-    Ast.BinaryExpr {lhs = ((2, 10), (Ast.IntExpr 1)); op = Ast.AddOp;
-      rhs = ((2, 14), (Ast.IntExpr 2))});
-   high = ((2, 19), (Ast.IntExpr 30));
+    Ast.BinaryExpr {lhs = ((2, 10), (Ast.IntExpr 1l)); op = Ast.AddOp;
+      rhs = ((2, 14), (Ast.IntExpr 2l))});
+   high = ((2, 19), (Ast.IntExpr 30l));
    body =
    ((3, 3),
     Ast.ForExpr {var = Symbol.sym "j"; escape = ref (true);
-      low = ((3, 12), (Ast.IntExpr 1)); high = ((3, 17), (Ast.IntExpr 20));
+      low = ((3, 12), (Ast.IntExpr 1l)); high = ((3, 17), (Ast.IntExpr 20l));
       body =
       ((4, 5),
        Ast.ForExpr {var = Symbol.sym "k"; escape = ref (true);
-         low = ((4, 14), (Ast.IntExpr 0)); high = ((4, 19), (Ast.IntExpr 0));
+         low = ((4, 14), (Ast.IntExpr 0l)); high = ((4, 19), (Ast.IntExpr 0l));
          body =
          ((5, 7),
           Ast.ForExpr {var = Symbol.sym "i"; escape = ref (true);
-            low = ((5, 16), (Ast.IntExpr 1));
-            high = ((5, 21), (Ast.IntExpr 0));
+            low = ((5, 16), (Ast.IntExpr 1l));
+            high = ((5, 21), (Ast.IntExpr 0l));
             body =
             ((6, 9),
              Ast.LetExpr {

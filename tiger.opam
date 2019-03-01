@@ -12,5 +12,6 @@ depends: [
   "ppx_deriving" { build }
   "base"
   "stdio"
+  "integers"
 ]
 dev-repo: "git+https://github.com/arucil/tiger"

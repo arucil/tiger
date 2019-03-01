@@ -88,9 +88,9 @@ let test_linearize =
       assert_ok
         {|let var a := 2 in a := a + 1; print("h"); a end|}
         [
-(Ir.Move ((Ir.Temp t100), (Ir.Const 2)));
+(Ir.Move ((Ir.Temp t100), (Ir.Const 2l)));
 (Ir.Move ((Ir.Temp t100),
-   (Ir.Binop (Ir.Add, (Ir.Lval (Ir.Temp t100)), (Ir.Const 1)))));
+   (Ir.Binop (Ir.Add, (Ir.Lval (Ir.Temp t100)), (Ir.Const 1l)))));
 (Ir.Expr (Ir.Call ((Ir.Name print), [(Ir.Name _L0)])));
 (Ir.Expr (Ir.Lval (Ir.Temp t100)));
 ]
@@ -100,14 +100,14 @@ let test_linearize =
       assert_ok
         {|let var a := 2 in (a := 3; a - 1) + (print("abc"); 307; 2 * 4) end|}
         [
-(Ir.Move ((Ir.Temp t100), (Ir.Const 2)));
-(Ir.Move ((Ir.Temp t100), (Ir.Const 3)));
+(Ir.Move ((Ir.Temp t100), (Ir.Const 2l)));
+(Ir.Move ((Ir.Temp t100), (Ir.Const 3l)));
 (Ir.Move ((Ir.Temp t101),
-   (Ir.Binop (Ir.Sub, (Ir.Lval (Ir.Temp t100)), (Ir.Const 1)))));
+   (Ir.Binop (Ir.Sub, (Ir.Lval (Ir.Temp t100)), (Ir.Const 1l)))));
 (Ir.Expr (Ir.Call ((Ir.Name print), [(Ir.Name _L0)])));
 (Ir.Expr
    (Ir.Binop (Ir.Add, (Ir.Lval (Ir.Temp t101)),
-      (Ir.Binop (Ir.Mul, (Ir.Const 2), (Ir.Const 4))))));
+      (Ir.Binop (Ir.Mul, (Ir.Const 2l), (Ir.Const 4l))))));
 ]
         );
 
@@ -115,12 +115,12 @@ let test_linearize =
       assert_ok
         {|let var a := 2 in (a := 3; 7) + (print("abc"); 307; 2 * 4) end|}
         [
-(Ir.Move ((Ir.Temp t100), (Ir.Const 2)));
-(Ir.Move ((Ir.Temp t100), (Ir.Const 3)));
+(Ir.Move ((Ir.Temp t100), (Ir.Const 2l)));
+(Ir.Move ((Ir.Temp t100), (Ir.Const 3l)));
 (Ir.Expr (Ir.Call ((Ir.Name print), [(Ir.Name _L0)])));
 (Ir.Expr
-   (Ir.Binop (Ir.Add, (Ir.Const 7),
-      (Ir.Binop (Ir.Mul, (Ir.Const 2), (Ir.Const 4))))));
+   (Ir.Binop (Ir.Add, (Ir.Const 7l),
+      (Ir.Binop (Ir.Mul, (Ir.Const 2l), (Ir.Const 4l))))));
 ]
         );
 
@@ -128,11 +128,11 @@ let test_linearize =
       assert_ok
         {|let var a := () in a := print(chr(3 + ord("a"))) end|}
         [
-(Ir.Move ((Ir.Temp t100), (Ir.Const 0)));
+(Ir.Move ((Ir.Temp t100), (Ir.Const 0l)));
 (Ir.Move ((Ir.Temp t102), (Ir.Call ((Ir.Name ord), [(Ir.Name _L0)]))));
 (Ir.Move ((Ir.Temp t101),
    (Ir.Call ((Ir.Name chr),
-      [(Ir.Binop (Ir.Add, (Ir.Const 3), (Ir.Lval (Ir.Temp t102))))]))
+      [(Ir.Binop (Ir.Add, (Ir.Const 3l), (Ir.Lval (Ir.Temp t102))))]))
    ));
 (Ir.Move ((Ir.Temp t100),
    (Ir.Call ((Ir.Name print), [(Ir.Lval (Ir.Temp t101))]))));
@@ -152,7 +152,7 @@ end
         [
 (Ir.Move ((Ir.Temp t101), (Ir.Call ((Ir.Name ord), [(Ir.Name _L0)]))));
 (Ir.Move ((Ir.Temp t100),
-   (Ir.Call ((Ir.Name alloc_array), [(Ir.Const 1); (Ir.Lval (Ir.Temp t101))]
+   (Ir.Call ((Ir.Name alloc_array), [(Ir.Const 1l); (Ir.Lval (Ir.Temp t101))]
       ))
    ));
 (Ir.Move ((Ir.Temp t103), (Ir.Lval (Ir.Temp t100))));
@@ -162,10 +162,10 @@ end
    (Ir.Mem
       (Ir.Binop (Ir.Add, (Ir.Lval (Ir.Temp t103)),
          (Ir.Binop (Ir.Mul,
-            (Ir.Binop (Ir.Mul, (Ir.Lval (Ir.Temp t102)), (Ir.Const 3))),
-            (Ir.Const 4)))
+            (Ir.Binop (Ir.Mul, (Ir.Lval (Ir.Temp t102)), (Ir.Const 3l))),
+            (Ir.Const 4l)))
          ))),
-   (Ir.Const 37)));
+   (Ir.Const 37l)));
 ]
         )
   ]
