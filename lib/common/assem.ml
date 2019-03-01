@@ -51,7 +51,7 @@ let parse_int s len pos =
   (Int.of_string (String.sub s ~pos ~len:(end' - pos)), end')
 
 let rec parse_mnemonic s len pos =
-  if pos = len - 1 then
+  if pos = len then
     []
   else
     match String.index_from s pos '\'' with

@@ -58,7 +58,7 @@ module Frame = struct
             else
               let open Ir in
               (* fp 已经更新,指向arguments底部 *)
-              Binop (Add, Lval (Temp fp), Const (Int32.of_int_exn ((i - Array.length reg_params) * word_size)))
+              Lval (Mem (Binop (Add, Lval (Temp fp), Const (Int32.of_int_exn ((i - Array.length reg_params) * word_size)))))
           in
           let dest =
             if escape then

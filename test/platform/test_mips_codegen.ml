@@ -46,13 +46,16 @@ let show_temp t =
 
 let show_assems asm = List.map ~f:(fun a -> Assem.show a show_temp) asm |> String.concat ~sep:"\n"
 
+let trim_assems asm = String.lstrip ~drop:(fun c -> Char.(c = '\n')) asm
+  |> String.rstrip
+
 type frag =
   | F of string
   | S of string
 
 let frag_eq x y =
   match x, y with
-  | F asm1, F asm2 -> String.(asm1 = asm2)
+  | F asm1, F asm2 -> String.(asm1 = trim_assems asm2)
   | S s1, S s2 -> String.(s1 = s2)
   | _ -> false
 
@@ -130,7 +133,7 @@ let assert_ok (src : string) (expected_assems : string) (expected_frags : (Symbo
     assert_failure
       ("errors:\n" ^ errors);
 
-  let expected_assems = String.strip ~drop:(fun c -> Char.(c = '\n')) expected_assems in
+  let expected_assems = trim_assems expected_assems in
   let expected_frags = Map.of_alist_exn (module Symbol) expected_frags in
 
   if not (String.(expected_assems = assems) && Map.equal frag_eq frags expected_frags)
@@ -195,10 +198,11 @@ let test_codegen =
           {|
         _L2:
 la t100, _L0
-or $a0, $0, t100
+move $a0, t100
 jal print
 nop
 j _L1
+nop
         _L1:
 |}
           [(_L0, S "hello")]);
@@ -212,8 +216,48 @@ in
   foo(1,"hello",37+2,"world")
 end
           |}
-          {||}
-          [(_L1, S "hello");
+          {|
+        _L6:
+move $a0, $fp
+ori t108, $0, 1
+move $a1, t108
+la t109, _L1
+move $a2, t109
+ori t110, $0, 39
+move $a3, t110
+la t111, _L2
+addiu $sp, $sp, -4
+sw t111, 0($sp)
+jal _L0
+nop
+addiu $sp, $sp, 4
+j _L5
+nop
+        _L5:
+|}
+          [(_L0, F {|
+        _L4:
+sw $a0, -4($fp)
+nop
+move t100, $a1
+move t101, $a2
+move t102, $a3
+lw t105, 0($fp)
+nop
+move t103, t105
+move $a0, t101
+jal ord
+nop
+move t104, $v0
+mult t100, t102
+mflo t107
+addu t106, t104, t107
+move $v0, t106
+j _L3
+nop
+        _L3:
+|});
+           (_L1, S "hello");
            (_L2, S "world")])
     ]
   ]

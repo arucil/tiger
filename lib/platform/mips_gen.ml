@@ -23,15 +23,6 @@ let stmt_gen stmt temp_store =
     })
   in
 
-  let beq is_beq s tlabel flabel =
-    emit (A.Oper {
-      assem = A.make_mnemonic "%s 's0, $0, 'j0" (if is_beq then "beq" else "bne");
-      src = [|s|];
-      dst = [||];
-      jumps = [|tlabel; flabel|]
-    })
-  in
-
   let is_unsigned = function
     | Ult | Ule | Ugt | Uge -> true
     | _ -> false
@@ -58,15 +49,14 @@ let stmt_gen stmt temp_store =
       const_expr n t
     | Move (Temp t, Call (f, args)) ->
       call_stmt f args;
-      emit (A.Oper {
-        assem = A.make_mnemonic "or 'd0, $0, 's0";
-        src = [|Mips_platf.rv|];
-        dst = [|t|];
-        jumps = [||]
+      emit (A.Move {
+        assem = A.make_mnemonic "move 'd0, 's0";
+        src = Mips_platf.rv;
+        dst = t
       })
     | Move (Temp t, e1) ->
       emit (A.Oper {
-        assem = A.make_mnemonic "or 'd0, $0, 's0";
+        assem = A.make_mnemonic "move 'd0, 's0";
         src = [|munch_expr e1|];
         dst = [|t|];
         jumps = [||]
@@ -82,7 +72,8 @@ let stmt_gen stmt temp_store =
         src = [||];
         dst = [||];
         jumps = [|label|];
-      })
+      });
+      nop ()
     | Jump _ ->
       Utils.Exn.unreachable ()
     | Cjump (op, Const n1, Const n2, t, _) ->
@@ -98,12 +89,13 @@ let stmt_gen stmt temp_store =
           | Ugt -> Unsigned.UInt32.(compare (of_int32 n1) (of_int32 n2) > 0)
           | Uge -> Unsigned.UInt32.(compare (of_int32 n1) (of_int32 n2) >= 0))
         then
-          emit (A.Oper {
+          (emit (A.Oper {
             assem = A.make_mnemonic "j 'j0";
             src = [||];
             dst = [||];
             jumps = [|t|];
-          })
+          });
+          nop ())
     | Cjump (Gt | Ge | Lt | Le as op, e1, Const 0l, t, f) ->
       let op =
         match op with
@@ -118,7 +110,8 @@ let stmt_gen stmt temp_store =
         src = [|munch_expr e1|];
         dst = [||];
         jumps = [|t; f|]
-      })
+      });
+      nop ()
     | Cjump (Gt | Ge | Lt | Le as op, Const 0l, e1, t, f) ->
       let op =
         match op with
@@ -133,7 +126,8 @@ let stmt_gen stmt temp_store =
         src = [|munch_expr e1|];
         dst = [||];
         jumps = [|t; f|]
-      })
+      });
+      nop ()
     | Cjump (Eq | Ne as op, e1, e2, t, f) ->
       let op =
         match op with
@@ -146,7 +140,8 @@ let stmt_gen stmt temp_store =
         src = [|munch_expr e1; munch_expr e2|];
         dst = [||];
         jumps = [|t; f|];
-      })
+      });
+      nop ()
     | Cjump (Lt | Ult as op, e1, Const n, t, f) | Cjump (Gt | Ugt as op, Const n, e1, t, f) ->
       let is_unsigned = is_unsigned op in
       if Int32.(n >= -32768l && n <= 32767l) then
@@ -215,7 +210,7 @@ let stmt_gen stmt temp_store =
     nop ();
     if arity > 4 then
       emit (A.Oper {
-        assem = A.make_mnemonic "addiu 's0, 's0, 4";
+        assem = A.make_mnemonic "addiu 's0, 's0, %d" ((arity - 4) * 4);
         src = [|Mips_platf.sp|];
         dst = [|Mips_platf.sp|];
         jumps = [||]
@@ -227,11 +222,10 @@ let stmt_gen stmt temp_store =
       begin
         let src = munch_expr arg in
         if i < 4 then
-          emit (A.Oper {
-            assem = A.make_mnemonic "or 'd0, $0, 's0";
-            src = [|src|];
-            dst = [|Mips_platf.reg_params.(i)|];
-            jumps = [||]
+          emit (A.Move {
+            assem = A.make_mnemonic "move 'd0, 's0";
+            src = src;
+            dst = Mips_platf.reg_params.(i)
           })
         else
           begin
@@ -260,6 +254,15 @@ let stmt_gen stmt temp_store =
       jumps = [||]
     });
     beq is_le temp t f
+
+  and beq is_beq s tlabel flabel =
+    emit (A.Oper {
+      assem = A.make_mnemonic "%s 's0, $0, 'j0" (if is_beq then "beq" else "bne");
+      src = [|s|];
+      dst = [||];
+      jumps = [|tlabel; flabel|]
+    });
+    nop ()
 
   and result f =
     let dst = Temp.new_temp temp_store in
