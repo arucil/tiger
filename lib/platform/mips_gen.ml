@@ -55,11 +55,10 @@ let stmt_gen stmt temp_store =
         dst = t
       })
     | Move (Temp t, e1) ->
-      emit (A.Oper {
+      emit (A.Move {
         assem = A.make_mnemonic "move 'd0, 's0";
-        src = [|munch_expr e1|];
-        dst = [|t|];
-        jumps = [||]
+        src = munch_expr e1;
+        dst = t
       })
     | Label label ->
       emit (A.Label {
@@ -210,7 +209,7 @@ let stmt_gen stmt temp_store =
     nop ();
     if arity > 4 then
       emit (A.Oper {
-        assem = A.make_mnemonic "addiu 's0, 's0, %d" ((arity - 4) * 4);
+        assem = A.make_mnemonic "addiu 'd0, 's0, %d" ((arity - 4) * 4);
         src = [|Mips_platf.sp|];
         dst = [|Mips_platf.sp|];
         jumps = [||]
@@ -230,7 +229,7 @@ let stmt_gen stmt temp_store =
         else
           begin
             emit (A.Oper {
-              assem = A.make_mnemonic "addiu 's0, 's0, -4";
+              assem = A.make_mnemonic "addiu 'd0, 's0, -4";
               src = [|Mips_platf.sp|];
               dst = [|Mips_platf.sp|];
               jumps = [||]

@@ -163,22 +163,6 @@ Fragments:
          (show_frags ~ref_frags:expected_frags (Map.to_alist frags)))
 
 let test_codegen =
-  let alloc_array = Symbol.sym "alloc_array" in
-  let alloc_record = Symbol.sym "alloc_record" in
-  let compare_str = Symbol.sym "compare_str" in
-  let concat = Symbol.sym "concat" in
-  let print = Symbol.sym "print" in
-  let t2 = Temp.temp_of_int 2 in
-  let t4 = Temp.temp_of_int 4 in
-  let t5 = Temp.temp_of_int 5 in
-  let t6 = Temp.temp_of_int 6 in
-  let t7 = Temp.temp_of_int 7 in
-  let t30 = Temp.temp_of_int 30 in
-  let t100 = Temp.temp_of_int 100 in
-  let t101 = Temp.temp_of_int 101 in
-  let t102 = Temp.temp_of_int 102 in
-  let t103 = Temp.temp_of_int 103 in
-  let t104 = Temp.temp_of_int 104 in
   let _L0 = Temp.named_label "_L0" in
   let _L1 = Temp.named_label "_L1" in
   let _L2 = Temp.named_label "_L2" in
@@ -258,7 +242,233 @@ nop
         _L3:
 |});
            (_L1, S "hello");
-           (_L2, S "world")])
+           (_L2, S "world")]);
+    ];
+
+    "arithmetic" >:: (fun _ ->
+      assert_ok
+        {|
+let
+  var a := 20
+  var b := 37
+in
+  a := a * 3 - -b / 7 + 5 * -6
+end
+        |}
+        {|
+        _L1:
+ori t100, $0, 20
+ori t101, $0, 37
+addiu t104, $0, -6
+ori t105, $0, 5
+mult t105, t104
+mflo t103
+ori t108, $0, 7
+subu t109, $0, t101
+divu t109, t108
+mflo t107
+ori t111, $0, 3
+mult t100, t111
+mflo t110
+subu t106, t110, t107
+addu t102, t106, t103
+move t100, t102
+j _L0
+nop
+        _L0:
+        |}
+        []);
+
+    "sequence" >:: (fun _ ->
+      assert_ok
+        {|let var a := 20 in (1+2;((); nil; a := 27 + 6); print("abc"); 127) end|}
+        {|
+        _L2:
+ori t100, $0, 20
+ori t101, $0, 33
+move t100, t101
+la t102, _L0
+move $a0, t102
+jal print
+nop
+j _L1
+nop
+        _L1:
+        |}
+        [(_L0, S "abc")]);
+
+    "array" >:: (fun _ ->
+      assert_ok
+        {|
+let
+  var a := 30
+  type arr = array of int
+  var b := arr[37 + 2] of a
+in
+  a := b[a*100]
+end
+        |}
+        {|
+        _L1:
+ori t100, $0, 30
+ori t102, $0, 39
+move $a0, t102
+move $a1, t100
+jal alloc_array
+nop
+move t101, $v0
+ori t106, $0, 4
+ori t108, $0, 100
+mult t100, t108
+mflo t107
+mult t107, t106
+mflo t105
+addu t104, t101, t105
+lw t103, 0(t104)
+nop
+move t100, t103
+j _L0
+nop
+        _L0:
+|}
+        []);
+
+    "record" >:: (fun _ ->
+      assert_ok
+        {|
+let
+  type rec = { foo : int, bar : string, baz : rec }
+  var a := rec { foo = 30, bar = "hello", baz = nil }
+  var b := 20
+in
+  b := ord(a.bar) + a.foo * a.baz.foo
+end
+        |}
+        {|
+        _L2:
+ori t104, $0, 12
+move $a0, t104
+jal alloc_record
+nop
+move t100, $v0
+ori t105, $0, 30
+sw t105, 0(t100)
+nop
+la t106, _L0
+sw t106, 4(t100)
+nop
+sw $0, 8(t100)
+nop
+move t101, t100
+ori t102, $0, 20
+lw t107, 4(t101)
+nop
+move $a0, t107
+jal ord
+nop
+move t103, $v0
+lw t111, 8(t101)
+nop
+lw t110, 0(t111)
+nop
+lw t112, 0(t101)
+nop
+mult t112, t110
+mflo t109
+addu t108, t103, t109
+move t102, t108
+j _L1
+nop
+        _L1:
+        |}
+        [(_L0, S "hello")]);
+
+    "assign" >::: [
+      "variable" >:: (fun _ ->
+        assert_ok
+          {|
+let
+  var a := 200
+  var b := 300
+  var c := "hey"
+in
+  c := concat(chr(a), chr(b));
+  a := ord(c)
+end
+          |}
+          {|
+        _L2:
+ori t100, $0, 200
+ori t101, $0, 300
+la t106, _L0
+move t102, t106
+move $a0, t100
+jal chr
+nop
+move t103, $v0
+move t105, t103
+move $a0, t101
+jal chr
+nop
+move t104, $v0
+move $a0, t105
+move $a1, t104
+jal concat
+nop
+move t102, $v0
+move $a0, t102
+jal ord
+nop
+move t100, $v0
+j _L1
+nop
+        _L1:
+          |}
+          [(_L0, S "hey")]);
+
+      "array" >:: (fun _ ->
+        assert_ok
+          {|
+let
+  type arr = array of int
+  var a := arr[0] of (30 * 7 + 2)
+in
+  a[-3] := 78
+end
+          |}
+          {|
+        _L1:
+move $a0, $0
+ori t102, $0, 210
+addiu t101, t102, 2
+move $a1, t101
+jal alloc_array
+nop
+move t100, $v0
+ori t105, $0, 4
+addiu t106, $0, -3
+mult t106, t105
+mflo t104
+addu t103, t100, t104
+ori t107, $0, 78
+sw t107, 0(t103)
+j _L0
+nop
+        _L0:
+          |}
+          []);
+
+      "record" >:: (fun _ ->
+        assert_ok
+          {|
+let
+  type rec = { foo : string, bar : int }
+in
+  a.foo.bar[2] := 20
+end
+          |}
+          {||}
+          [])
     ]
   ]
 
