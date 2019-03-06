@@ -31,20 +31,20 @@ let stmt_gen stmt temp_store =
   let rec munch_stmt = function
     | Seq _ -> Utils.Exn.unreachable ()
     | Move (Mem (Binop (Add, e1, Const n)), e2) | Move (Mem (Binop (Add, Const n, e1)), e2) ->
-      emit (A.Oper {
-        assem = A.make_mnemonic "sw 's0, %ld('s1)" n;
-        src = [|munch_expr e2; munch_expr e1|];
-        dst = [||];
-        jumps = [||]
-      });
-      nop ()
+      if Int32.(n >= -32768l && n <= 32767l) then
+        begin
+          emit (A.Oper {
+            assem = A.make_mnemonic "sw 's0, %ld('s1)" n;
+            src = [|munch_expr e2; munch_expr e1|];
+            dst = [||];
+            jumps = [||]
+          });
+          nop ()
+        end
+      else
+        move_mem_stmt (Binop (Add, e1, Const n)) e2
     | Move (Mem e1, e2) ->
-      emit (A.Oper {
-        assem = A.make_mnemonic "sw 's0, 0('s1)";
-        src = [|munch_expr e2; munch_expr e1|];
-        dst = [||];
-        jumps = [||]
-      })
+      move_mem_stmt e1 e2
     | Move (Temp t, Const n) ->
       const_expr n t
     | Move (Temp t, Call (f, args)) ->
@@ -185,6 +185,15 @@ let stmt_gen stmt temp_store =
       call_stmt f args
     | Expr _ -> ()
 
+  and move_mem_stmt e1 e2 =
+    emit (A.Oper {
+      assem = A.make_mnemonic "sw 's0, 0('s1)";
+      src = [|munch_expr e2; munch_expr e1|];
+      dst = [||];
+      jumps = [||]
+    });
+    nop ()
+
   and call_stmt f args =
     call_args 0 args;
     let arity = List.length args in
@@ -234,6 +243,7 @@ let stmt_gen stmt temp_store =
               dst = [|Mips_platf.sp|];
               jumps = [||]
             });
+            (* the next instruction won't use the value immediately, so no need to add NOP *)
             emit (A.Oper {
               assem = A.make_mnemonic "sw 's0, 0('s1)";
               src = [|src; Mips_platf.sp|];
@@ -557,7 +567,7 @@ let stmt_gen stmt temp_store =
       nop ())
 
   and const_expr n dst =
-    if Int32.(n > 0l && n <= 65535l) then
+    if Int32.(n >= 0l && n <= 65535l) then
       emit (A.Oper {
         assem = A.make_mnemonic "ori 'd0, $0, %ld" n;
         src = [||];

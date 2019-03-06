@@ -452,6 +452,7 @@ mflo t104
 addu t103, t100, t104
 ori t107, $0, 78
 sw t107, 0(t103)
+nop
 j _L0
 nop
         _L0:
@@ -463,12 +464,208 @@ nop
           {|
 let
   type rec = { foo : string, bar : int }
+  var a : rec := nil
 in
-  a.foo.bar[2] := 20
+  a.foo := "hello";
+  a.bar := 37
 end
           |}
-          {||}
+          {|
+        _L2:
+ori t100, $0, 0
+la t101, _L0
+sw t101, 0(t100)
+nop
+ori t102, $0, 37
+sw t102, 4(t100)
+nop
+j _L1
+nop
+        _L1:
+          |}
+          [(_L0, S "hello")]);
+
+      "mixed" >:: (fun _ ->
+        assert_ok
+          {|
+let
+  type rec = { foo : arr, bar : int, baz : arr2 }
+  type arr = array of rec
+  type arr2 = array of int
+  var a := arr[0] of nil
+  var b : rec := nil
+in
+  a[27].baz[78] := 30;
+  b.foo[b.bar].bar := 37
+end
+          |}
+          {|
+        _L1:
+move $a0, $0
+move $a1, $0
+jal alloc_array
+nop
+move t100, $v0
+ori t101, $0, 0
+ori t103, $0, 312
+ori t107, $0, 108
+addu t106, t100, t107
+lw t105, 0(t106)
+nop
+lw t104, 8(t105)
+nop
+addu t102, t104, t103
+ori t108, $0, 30
+sw t108, 0(t102)
+nop
+ori t112, $0, 4
+lw t113, 4(t101)
+nop
+mult t113, t112
+mflo t111
+lw t114, 0(t101)
+nop
+addu t110, t114, t111
+lw t109, 0(t110)
+nop
+ori t115, $0, 37
+sw t115, 4(t109)
+nop
+j _L0
+nop
+        _L0:
+          |}
           [])
+    ];
+
+    "if" >::: [
+      "if-then-else" >:: (fun _ ->
+        assert_ok
+          {|
+let
+  var a := 20
+in
+  if a > 2 then
+    a := a + 1
+  else
+    a := 3 * a
+end
+          |}
+          {|
+        _L4:
+ori t100, $0, 20
+ori t102, $0, 2
+slt t101, t102, t100
+beq t101, $0, _L1
+nop
+        _L0:
+addiu t103, t100, 1
+move t100, t103
+        _L2:
+j _L3
+nop
+        _L1:
+ori t105, $0, 3
+mult t105, t100
+mflo t104
+move t100, t104
+j _L2
+nop
+        _L3:
+          |}
+          []);
+
+      "if-then" >:: (fun _ ->
+        assert_ok
+          {|
+let
+  var a := 20
+  var b := 30
+in
+  if a >= b then
+    a := b - 9
+end
+          |}
+          {|
+        _L4:
+ori t100, $0, 20
+ori t101, $0, 30
+slt t102, t100, t101
+bne t102, $0, _L1
+nop
+        _L0:
+addiu t103, t101, -9
+move t100, t103
+        _L2:
+j _L3
+nop
+        _L1:
+j _L2
+nop
+        _L3:
+          |}
+          []);
+
+      "mixed" >:: (fun _ ->
+        assert_ok
+          {|
+let
+  var a := 27
+  var b := a + 30
+in
+  if a = b + 2 then
+    if 3 <> a then
+      print("hello")
+    else
+      exit()
+  else if a > b then
+    a := b / 30
+end
+          |}
+          {|
+        _L11:
+ori t100, $0, 27
+addiu t102, t100, 30
+move t101, t102
+addiu t103, t101, 2
+bne t100, t103, _L8
+nop
+        _L7:
+ori t104, $0, 3
+beq t104, t100, _L2
+nop
+        _L1:
+la t105, _L0
+move $a0, t105
+jal print
+nop
+        _L3:
+        _L9:
+j _L10
+nop
+        _L2:
+jal exit
+nop
+j _L3
+nop
+        _L8:
+slt t106, t101, t100
+beq t106, $0, _L5
+nop
+        _L4:
+ori t108, $0, 30
+divu t101, t108
+mflo t107
+move t100, t107
+        _L6:
+j _L9
+nop
+        _L5:
+j _L6
+nop
+        _L10:
+          |}
+          [(_L0, S "hello")])
     ]
   ]
 

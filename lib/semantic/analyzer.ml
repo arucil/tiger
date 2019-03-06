@@ -270,7 +270,7 @@ let trans_prog' (expr : Ast.expr) (module Trans : Translate.S) temp_store =
           | ArrayType (elem_ty, _) ->
             begin
               let elem_ty = Type.actual_type elem_ty in
-              if Type.(elem_ty <> init_ty) then
+              if not (Type.is_compatible elem_ty init_ty) then
                 Errors.report pos "expected %s type for initial value of array, got %s type"
                   (Type.show elem_ty) (Type.show init_ty);
               let ir = Trans.array ~size:size_ir ~init:init_ir in
