@@ -666,7 +666,733 @@ nop
         _L10:
           |}
           [(_L0, S "hello")])
-    ]
+    ];
+
+    "comparison" >::: [
+      ">" >:: (fun _ ->
+        assert_ok
+          {|
+let
+  var a := 20
+  var b := 30
+in
+  if a > b then
+    a := a > 7
+  else
+    b := 13 > b
+end
+          |}
+          {|
+        _L8:
+ori t100, $0, 20
+ori t101, $0, 30
+slt t104, t101, t100
+beq t104, $0, _L5
+nop
+        _L4:
+ori t102, $0, 1
+ori t106, $0, 7
+slt t105, t106, t100
+beq t105, $0, _L1
+nop
+        _L0:
+move t100, t102
+        _L6:
+j _L7
+nop
+        _L1:
+ori t102, $0, 0
+j _L0
+nop
+        _L5:
+ori t103, $0, 1
+slti t107, t101, 13
+beq t107, $0, _L3
+nop
+        _L2:
+move t101, t103
+j _L6
+nop
+        _L3:
+ori t103, $0, 0
+j _L2
+nop
+        _L7:
+          |}
+          []);
+
+      "k1 > k2" >:: (fun _ ->
+        assert_ok
+          {|let var a := 3 > 2 var b := 2 > 3 in end|}
+          {|
+        _L5:
+ori t101, $0, 1
+        _L0:
+move t100, t101
+ori t103, $0, 1
+j _L3
+nop
+        _L2:
+move t102, t103
+j _L4
+nop
+        _L1:
+ori t101, $0, 0
+j _L0
+nop
+        _L3:
+ori t103, $0, 0
+j _L2
+nop
+        _L4:
+          |}
+          []);
+
+      "> with 0" >:: (fun _ ->
+        assert_ok
+          {|let var a := 1 var b := a > 0 var c := 0 > a in end|}
+          {|
+        _L5:
+ori t100, $0, 1
+ori t102, $0, 1
+blez t100, _L1
+nop
+        _L0:
+move t101, t102
+ori t104, $0, 1
+bgez t100, _L3
+nop
+        _L2:
+move t103, t104
+j _L4
+nop
+        _L1:
+ori t102, $0, 0
+j _L0
+nop
+        _L3:
+ori t104, $0, 0
+j _L2
+nop
+        _L4:
+          |}
+          []);
+
+      ">=" >:: (fun _ ->
+        assert_ok
+          {|
+let
+  var a := 20
+  var b := 30
+in
+  if a >= b then
+    a := a >= 7
+  else
+    b := 13 >= b
+end
+          |}
+          {|
+        _L8:
+ori t100, $0, 20
+ori t101, $0, 30
+slt t104, t100, t101
+bne t104, $0, _L5
+nop
+        _L4:
+ori t102, $0, 1
+slti t105, t100, 7
+bne t105, $0, _L1
+nop
+        _L0:
+move t100, t102
+        _L6:
+j _L7
+nop
+        _L1:
+ori t102, $0, 0
+j _L0
+nop
+        _L5:
+ori t103, $0, 1
+ori t107, $0, 13
+slt t106, t107, t101
+bne t106, $0, _L3
+nop
+        _L2:
+move t101, t103
+j _L6
+nop
+        _L3:
+ori t103, $0, 0
+j _L2
+nop
+        _L7:
+          |}
+          []);
+
+      ">= with 0" >:: (fun _ ->
+        assert_ok
+          {|let var a := 1 var b := a >= 0 var c := 0 >= a in end|}
+          {|
+        _L5:
+ori t100, $0, 1
+ori t102, $0, 1
+bltz t100, _L1
+nop
+        _L0:
+move t101, t102
+ori t104, $0, 1
+bgtz t100, _L3
+nop
+        _L2:
+move t103, t104
+j _L4
+nop
+        _L1:
+ori t102, $0, 0
+j _L0
+nop
+        _L3:
+ori t104, $0, 0
+j _L2
+nop
+        _L4:
+          |}
+          []);
+
+      "<" >:: (fun _ ->
+        assert_ok
+          {|
+let
+  var a := 20
+  var b := 30
+in
+  if a < b then
+    a := a < 7
+  else
+    b := 13 < b
+end
+          |}
+          {|
+        _L8:
+ori t100, $0, 20
+ori t101, $0, 30
+slt t104, t100, t101
+beq t104, $0, _L5
+nop
+        _L4:
+ori t102, $0, 1
+slti t105, t100, 7
+beq t105, $0, _L1
+nop
+        _L0:
+move t100, t102
+        _L6:
+j _L7
+nop
+        _L1:
+ori t102, $0, 0
+j _L0
+nop
+        _L5:
+ori t103, $0, 1
+ori t107, $0, 13
+slt t106, t107, t101
+beq t106, $0, _L3
+nop
+        _L2:
+move t101, t103
+j _L6
+nop
+        _L3:
+ori t103, $0, 0
+j _L2
+nop
+        _L7:
+          |}
+          []);
+
+      "< with 0" >:: (fun _ ->
+        assert_ok
+          {|let var a := 1 var b := a < 0 var c := 0 < a in end|}
+          {|
+        _L5:
+ori t100, $0, 1
+ori t102, $0, 1
+bgez t100, _L1
+nop
+        _L0:
+move t101, t102
+ori t104, $0, 1
+blez t100, _L3
+nop
+        _L2:
+move t103, t104
+j _L4
+nop
+        _L1:
+ori t102, $0, 0
+j _L0
+nop
+        _L3:
+ori t104, $0, 0
+j _L2
+nop
+        _L4:
+          |}
+          []);
+
+      "<=" >:: (fun _ ->
+        assert_ok
+          {|
+let
+  var a := 20
+  var b := 30
+in
+  if a <= b then
+    a := a <= 7
+  else
+    b := 13 <= b
+end
+          |}
+          {|
+        _L8:
+ori t100, $0, 20
+ori t101, $0, 30
+slt t104, t101, t100
+bne t104, $0, _L5
+nop
+        _L4:
+ori t102, $0, 1
+ori t106, $0, 7
+slt t105, t106, t100
+bne t105, $0, _L1
+nop
+        _L0:
+move t100, t102
+        _L6:
+j _L7
+nop
+        _L1:
+ori t102, $0, 0
+j _L0
+nop
+        _L5:
+ori t103, $0, 1
+slti t107, t101, 13
+bne t107, $0, _L3
+nop
+        _L2:
+move t101, t103
+j _L6
+nop
+        _L3:
+ori t103, $0, 0
+j _L2
+nop
+        _L7:
+          |}
+          []);
+
+      "<= with 0" >:: (fun _ ->
+        assert_ok
+          {|let var a := 1 var b := a <= 0 var c := 0 <= a in end|}
+          {|
+        _L5:
+ori t100, $0, 1
+ori t102, $0, 1
+bgtz t100, _L1
+nop
+        _L0:
+move t101, t102
+ori t104, $0, 1
+bltz t100, _L3
+nop
+        _L2:
+move t103, t104
+j _L4
+nop
+        _L1:
+ori t102, $0, 0
+j _L0
+nop
+        _L3:
+ori t104, $0, 0
+j _L2
+nop
+        _L4:
+          |}
+          []);
+
+      "=" >:: (fun _ ->
+        assert_ok
+          {|
+let
+  var a := 20
+  var b := 30
+in
+  if a = b then
+    a := a = 7
+  else
+    b := 13 = b
+end
+          |}
+          {|
+        _L8:
+ori t100, $0, 20
+ori t101, $0, 30
+bne t100, t101, _L5
+nop
+        _L4:
+ori t102, $0, 1
+ori t104, $0, 7
+bne t100, t104, _L1
+nop
+        _L0:
+move t100, t102
+        _L6:
+j _L7
+nop
+        _L1:
+ori t102, $0, 0
+j _L0
+nop
+        _L5:
+ori t103, $0, 1
+ori t105, $0, 13
+bne t105, t101, _L3
+nop
+        _L2:
+move t101, t103
+j _L6
+nop
+        _L3:
+ori t103, $0, 0
+j _L2
+nop
+        _L7:
+          |}
+          []);
+
+      "= with 0" >:: (fun _ ->
+        assert_ok
+          {|let var a := 1 var b := a = 0 var c := 0 = a in end|}
+          {|
+        _L5:
+ori t100, $0, 1
+ori t102, $0, 1
+bne t100, $0, _L1
+nop
+        _L0:
+move t101, t102
+ori t104, $0, 1
+bne $0, t100, _L3
+nop
+        _L2:
+move t103, t104
+j _L4
+nop
+        _L1:
+ori t102, $0, 0
+j _L0
+nop
+        _L3:
+ori t104, $0, 0
+j _L2
+nop
+        _L4:
+          |}
+          []);
+
+      "<>" >:: (fun _ ->
+        assert_ok
+          {|
+let
+  var a := 20
+  var b := 30
+in
+  if a <> b then
+    a := a <> 7
+  else
+    b := 13 <> b
+end
+          |}
+          {|
+        _L8:
+ori t100, $0, 20
+ori t101, $0, 30
+beq t100, t101, _L5
+nop
+        _L4:
+ori t102, $0, 1
+ori t104, $0, 7
+beq t100, t104, _L1
+nop
+        _L0:
+move t100, t102
+        _L6:
+j _L7
+nop
+        _L1:
+ori t102, $0, 0
+j _L0
+nop
+        _L5:
+ori t103, $0, 1
+ori t105, $0, 13
+beq t105, t101, _L3
+nop
+        _L2:
+move t101, t103
+j _L6
+nop
+        _L3:
+ori t103, $0, 0
+j _L2
+nop
+        _L7:
+          |}
+          []);
+
+      "<> with 0" >:: (fun _ ->
+        assert_ok
+          {|let var a := 1 var b := a <> 0 var c := 0 <> a in end|}
+          {|
+        _L5:
+ori t100, $0, 1
+ori t102, $0, 1
+beq t100, $0, _L1
+nop
+        _L0:
+move t101, t102
+ori t104, $0, 1
+beq $0, t100, _L3
+nop
+        _L2:
+move t103, t104
+j _L4
+nop
+        _L1:
+ori t102, $0, 0
+j _L0
+nop
+        _L3:
+ori t104, $0, 0
+j _L2
+nop
+        _L4:
+          |}
+          []);
+    ];
+
+    "logic and" >:: (fun _ ->
+      assert_ok
+        {|let var a := 46 var b := a > 89 & ord("hello") in end|}
+        {|
+        _L5:
+ori t100, $0, 46
+ori t102, $0, 1
+ori t105, $0, 89
+slt t104, t105, t100
+beq t104, $0, _L3
+nop
+        _L1:
+la t106, _L0
+move $a0, t106
+jal ord
+nop
+move t103, $v0
+beq t103, $0, _L3
+nop
+        _L2:
+move t101, t102
+j _L4
+nop
+        _L3:
+ori t102, $0, 0
+j _L2
+nop
+        _L4:
+        |}
+        [(_L0, S "hello")]);
+
+    "logic or" >:: (fun _ ->
+      assert_ok
+        {|let var a := 927 var b := 998 in a := 3785 <> a | a + b <= -3 end|}
+        {|
+        _L4:
+ori t100, $0, 927
+ori t101, $0, 998
+ori t102, $0, 1
+ori t103, $0, 3785
+beq t103, t100, _L0
+nop
+        _L1:
+move t100, t102
+j _L3
+nop
+        _L0:
+addu t105, t100, t101
+addiu t106, $0, -3
+slt t104, t106, t105
+beq t104, $0, _L1
+nop
+        _L2:
+ori t102, $0, 0
+j _L1
+nop
+        _L3:
+        |}
+        []);
+
+    "while loop" >:: (fun _ ->
+      assert_ok
+        {|
+let
+  var i := 127
+in
+  while i < 37264 do i := i + 1
+end
+        |}
+        {|
+        _L4:
+ori t100, $0, 127
+        _L1:
+ori t102, $0, 37264
+slt t101, t100, t102
+beq t101, $0, _L0
+nop
+        _L2:
+addiu t103, t100, 1
+move t100, t103
+j _L1
+nop
+        _L0:
+j _L3
+nop
+        _L3:
+        |}
+        []);
+
+    "for loop" >:: (fun _ ->
+      assert_ok
+        {|
+let
+  var a := 3128 - 2
+in
+  for i := -200 to a + 7 do
+    print("hello")
+end
+        |}
+        {|
+        _L5:
+ori t103, $0, 3126
+move t100, t103
+addiu t104, $0, -200
+move t101, t104
+addiu t105, t100, 7
+move t102, t105
+        _L3:
+slt t106, t102, t101
+bne t106, $0, _L0
+nop
+        _L2:
+la t107, _L1
+move $a0, t107
+jal print
+nop
+addiu t108, t101, 1
+move t101, t108
+j _L3
+nop
+        _L0:
+j _L4
+nop
+        _L4:
+        |}
+        [(_L1, S "hello")]);
+
+    "break in while loop" >:: (fun _ ->
+      assert_ok
+        {|
+let
+  var a := 379
+in
+  while a > 12 do
+    if a = 8 then
+      break
+end
+        |}
+        {|
+        _L7:
+ori t100, $0, 379
+        _L4:
+ori t102, $0, 12
+slt t101, t102, t100
+beq t101, $0, _L0
+nop
+        _L5:
+ori t103, $0, 8
+bne t100, t103, _L2
+nop
+        _L1:
+        _L0:
+j _L6
+nop
+        _L8:
+        _L3:
+j _L4
+nop
+        _L2:
+j _L3
+nop
+        _L6:
+        |}
+        []);
+
+    "break in for loop" >:: (fun _ ->
+      assert_ok
+        {|
+let
+  var a := 341
+in
+  for i := 304 to 14 do
+    if a then
+      break
+    else
+      a := a - 1
+end
+        |}
+        {|
+        _L7:
+ori t100, $0, 341
+ori t101, $0, 304
+ori t102, $0, 14
+        _L5:
+slt t103, t102, t101
+bne t103, $0, _L0
+nop
+        _L4:
+beq t100, $0, _L2
+nop
+        _L1:
+        _L0:
+j _L6
+nop
+        _L8:
+        _L3:
+addiu t104, t101, 1
+move t101, t104
+j _L5
+nop
+        _L2:
+addiu t105, t100, -1
+move t100, t105
+j _L3
+nop
+        _L6:
+        |}
+        [])
   ]
 
 let () =
