@@ -407,13 +407,14 @@ end
         {|
 let
   type a1 = array of a2
-  type a2 = array of int
-  var a := a1[0] of (a2[0] of 0)
+  type a2 = array of r1
+  type r1 = {}
+  var a := a1[0] of (a2[0] of nil)
 in
   a
 end
         |}
-        (Type.ArrayType (Type.ArrayType (Type.IntType, dummy_unique), dummy_unique)));
+        (Type.ArrayType (Type.ArrayType (Type.RecordType ([], dummy_unique), dummy_unique), dummy_unique)));
 
     "array creation errors" >:: (fun _ ->
       assert_error

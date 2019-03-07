@@ -581,10 +581,12 @@ end
                       (Ir.Seq ((Ir.Move ((Ir.Temp t102), Ir.Lval (Ir.Temp t7))),
                          (Ir.Seq (
                             (Ir.Move ((Ir.Temp t103),
-                               (Ir.Binop (Ir.Add, Ir.Lval (Ir.Temp t30), (Ir.Const 0l))))),
+                               (Ir.Lval
+                                 (Ir.Mem (Ir.Binop (Ir.Add, Ir.Lval (Ir.Temp t30), (Ir.Const 0l))))))),
                             (Ir.Seq (
                                (Ir.Move ((Ir.Temp t104),
-                                  (Ir.Binop (Ir.Add, Ir.Lval (Ir.Temp t30), (Ir.Const 4l))))),
+                                  (Ir.Lval
+                                    (Ir.Mem (Ir.Binop (Ir.Add, Ir.Lval (Ir.Temp t30), (Ir.Const 4l))))))),
                                (Ir.Move ((Ir.Temp t2), (Ir.Const 0l)))))
                             ))
                          ))
