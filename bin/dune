@@ -1,3 +1,0 @@
-(executable
-  (name tiger)
-  (libraries base stdio lex parse semantic))

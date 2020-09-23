@@ -1,4 +1,0 @@
-(test
-  (name test_parse)
-  (libraries base lex parse oUnit)
-  (preprocess (pps ppx_deriving.std)))

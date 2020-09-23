@@ -1,0 +1,42 @@
+
+%token EQUAL       "="
+%token ASSIGN      ":="
+%token COLON       ":"
+%token COMMA       ","
+%token LBRACE      "{"
+%token RBRACE      "}"
+%token LPAREN      "("
+%token RPAREN      ")"
+%token TYPE        "type"
+%token INT         "int"
+%token STRING      "string"
+%token ARRAY       "array"
+%token OF          "of"
+%token VAR         "var"
+%token NIL         "nil"
+%token FUNCTION    "function"
+%token IDENT       /[a-zA-Z][\w_]*/
+
+%skip /[ \n]+/
+
+%start program
+
+program = (decl)*
+
+decl = type-decl | var-decl | fun-decl
+
+type-decl = TYPE type-id EQUAL type
+
+type =
+    IDENT
+  | LBRACE type-fields RBRACE
+
+type-fields =
+    ()
+  | IDENT COLON type-id (COMMA IDENT COLON type-id)*
+
+type-id = INT | STRING | IDENT
+
+var-decl = VAR IDENT (COLON type-id)? ASSIGN expr
+
+fun-decl = FUNCTION IDENT LPAREN type-fields RPAREN (COLON type-id)? EQUAL expr

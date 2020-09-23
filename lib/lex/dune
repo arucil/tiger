@@ -1,8 +1,0 @@
-
-(ocamllex
-  (modules lexer))
-
-(library
-  (name lex)
-  (libraries base errors)
-  (preprocess (pps ppx_deriving.std)))
