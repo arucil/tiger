@@ -1,0 +1,3 @@
+(library
+  (name semantic)
+  (libraries base ast ir errors utils))

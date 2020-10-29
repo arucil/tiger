@@ -1,0 +1,6 @@
+;; disable warning-as-error
+(env
+  (dev
+    (flags (:standard -warn-error -A -w -30)))
+  (release
+    (flags (:standard -O3))))

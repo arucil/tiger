@@ -1,0 +1,4 @@
+(library
+  (name errors)
+  (libraries base stdio)
+  (preprocess (pps ppx_deriving.std)))

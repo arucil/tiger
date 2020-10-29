@@ -1,0 +1,17 @@
+opam-version: "2.0"
+name: "tiger"
+version: "~dev"
+synopsis: "Tiger compiler"
+maintainer: "amlo <xplzjwz@gmail.com>"
+authors: "amlo <xplzjwz@gmail.com>"
+license: "MIT"
+depends: [
+  "dune" { build }
+  "ounit" { build }
+  "menhir" { build }
+  "ppx_deriving" { build }
+  "base"
+  "stdio"
+  "integers"
+]
+dev-repo: "git+https://github.com/arucil/tiger"

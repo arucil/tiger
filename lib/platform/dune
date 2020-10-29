@@ -1,0 +1,4 @@
+(library
+  (name platform)
+  (libraries base integers common utils)
+  (c_library_flags (-lintegers)))

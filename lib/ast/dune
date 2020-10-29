@@ -1,0 +1,4 @@
+(library
+  (name ast)
+  (libraries base common errors)
+  (preprocess (pps ppx_deriving.std)))

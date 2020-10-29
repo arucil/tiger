@@ -1,0 +1,4 @@
+(test
+  (name test_lex)
+  (libraries lex base stdio oUnit)
+  (preprocess (pps ppx_deriving.std)))

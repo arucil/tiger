@@ -1,6 +1,23 @@
-target/
+*.annot
+*.cmo
+*.cma
+*.cmi
+*.a
+*.o
+*.cmx
+*.cmxs
+*.cmxa
 
+# ocamlbuild working directory
+_build/
 
-# Added by cargo
+# ocamlbuild targets
+*.byte
+*.native
 
-/target
+# oasis generated files
+setup.data
+setup.log
+
+# Merlin configuring file for Vim and Emacs
+.merlin

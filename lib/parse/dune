@@ -1,0 +1,7 @@
+(menhir
+  (flags --external-tokens Lex.Token --explain)
+  (modules parser))
+
+(library
+  (name parse)
+  (libraries base stdio lex errors common ast))
