@@ -44,20 +44,20 @@
 %token IDENT       /[a-zA-Z][\w_]*/
 %token LIT_INT     /\d+/
 %token LIT_STR     /"([^\\\n]|\\([nt"\\]|\d\d\d))*"/
-
+ 
 %skip /[ \n]+/
 
-%non-assoc    ELSE
-%right-assoc  NEG
-%left-assoc   MULT
-%left-assoc   ADD
-%non-assoc    REL
-%non-assoc    EQ
-%right-assoc  AND
-%right-assoc  OR
-%non-assoc    ASSIGN
-%non-assoc    ARRAY
 %non-assoc    CONTROL
+%non-assoc    NEW_ARRAY
+%non-assoc    ASSIGN
+%right-assoc  OR
+%right-assoc  AND
+%non-assoc    EQ NEQ
+%non-assoc    LT GT LE GE
+%left-assoc   MINUS PLUS
+%left-assoc   TIMES DIV MOD
+%right-assoc  NEG
+%non-assoc    ELSE
 
 %start program
 
@@ -94,30 +94,30 @@ lvalue-suffix =
 
 expr =
     lvalue
-  | lvalue ASSIGN expr %prec ASSIGN
+  | lvalue ASSIGN expr
   | NIL
   | LPAREN seq-exprs RPAREN
   | LIT_INT
   | LIT_STR
   | MINUS expr %prec NEG
   | IDENT LPAREN arg-exprs RPAREN
-  | expr MOD expr %prec MULT
-  | expr DIV expr %prec MULT
-  | expr TIMES expr %prec MULT
-  | expr PLUS expr %prec ADD
-  | expr MINUS expr %prec ADD
-  | expr GT expr %prec REL
-  | expr LT expr %prec REL
-  | expr GE expr %prec REL
-  | expr LE expr %prec REL
-  | expr EQ expr %prec EQ
-  | expr NEQ expr %prec EQ
-  | expr AND expr %prec AND
-  | expr OR expr %prec OR
+  | expr MOD expr
+  | expr DIV expr
+  | expr TIMES expr
+  | expr PLUS expr
+  | expr MINUS expr
+  | expr GT expr
+  | expr LT expr
+  | expr GE expr
+  | expr LE expr
+  | expr EQ expr
+  | expr NEQ expr
+  | expr AND expr
+  | expr OR expr
   | type-id LBRACE field-init-exprs RBRACE
-  | IDENT LBRACK expr RBRACK OF expr %prec ARRAY
-  | predef-type LBRACK expr RBRACK OF expr %prec ARRAY
-  | IF expr THEN expr ELSE expr %prec ELSE
+  | IDENT LBRACK expr RBRACK OF expr %prec NEW_ARRAY
+  | predef-type LBRACK expr RBRACK OF expr %prec NEW_ARRAY
+  | IF expr THEN expr ELSE expr
   | IF expr THEN expr %prec CONTROL
   | WHILE expr DO expr %prec CONTROL
   | FOR IDENT ASSIGN expr TO expr DO expr %prec CONTROL
